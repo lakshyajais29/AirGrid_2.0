@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy: #0D1B2A;
+  --deep-blue: #1A3A5C;
+  --mid-blue: #1E5FA8;
+  --accent-teal: #0F8B8D;
+  --gov-gold: #C9A84C;
+  --critical-red: #C0392B;
+  --safe-green: #1E8449;
+  --light-bg: #F4F6FA;
+  --text-primary: #1C2B3A;
+  --text-muted: #8A9BB0;
+
+  --background: var(--light-bg);
+  --foreground: var(--text-primary);
 }
 
 @theme inline {
+  --color-navy: var(--navy);
+  --color-deep-blue: var(--deep-blue);
+  --color-mid-blue: var(--mid-blue);
+  --color-accent-teal: var(--accent-teal);
+  --color-gov-gold: var(--gov-gold);
+  --color-critical-red: var(--critical-red);
+  --color-safe-green: var(--safe-green);
+  --color-light-bg: var(--light-bg);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
 }
