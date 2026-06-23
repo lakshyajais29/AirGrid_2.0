@@ -12,6 +12,13 @@
   --text-primary: #1C2B3A;
   --text-muted: #8A9BB0;
 
+  --gradient-card: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+  --border-subtle: #e2e8f0;
+  --shadow-card: 0 2px 12px rgba(13,27,42,0.08), 0 1px 3px rgba(13,27,42,0.05);
+  --shadow-hover: 0 8px 24px rgba(13,27,42,0.14);
+
+
+
   --background: var(--light-bg);
   --foreground: var(--text-primary);
 }
@@ -53,4 +60,95 @@ body {
   .print-break-inside-avoid {
     break-inside: avoid;
   }
+}
+
+.panel-card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.panel-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+.metric-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--navy);
+  line-height: 1;
+}
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--safe-green);
+  animation: pulse-live 2s infinite;
+  margin-right: 6px;
+}
+.stat-pill {
+  background: rgba(15,139,141,0.08);
+  border: 1px solid rgba(15,139,141,0.2);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-teal);
+}
+
+/* ── Loading screen animations ── */
+@keyframes spin-hex {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+.progress-fill-anim {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5d4, #0F8B8D);
+  border-radius: 2px;
+  animation: progress-fill 1.4s ease-out forwards;
+}
+
+/* ── Leaflet popup — light theme overrides ── */
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 32px rgba(13,27,42,0.12) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+.leaflet-popup-tip {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+.leaflet-popup-close-button {
+  color: #8A9BB0 !important;
+  font-size: 18px !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #0D1B2A !important;
 }

@@ -11,6 +11,7 @@ export type Weather = {
   humidity: number; // %
   visibility: number; // meters
   stability: string; // Pasquill stability class (default 'D')
+  isLive?: boolean;
 };
 
 const MOCK_WEATHER: Weather = {
@@ -25,7 +26,7 @@ const MOCK_WEATHER: Weather = {
 export async function GET() {
   const apiKey = process.env.OWM_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(MOCK_WEATHER, { status: 200 });
+    return NextResponse.json({ ...MOCK_WEATHER, isLive: false }, { status: 200 });
   }
 
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=28.5561&lon=77.1000&units=metric&appid=${apiKey}`;
@@ -40,10 +41,11 @@ export async function GET() {
       humidity: data.main?.humidity ?? MOCK_WEATHER.humidity,
       visibility: data.visibility ?? MOCK_WEATHER.visibility,
       stability: 'D', // default stability for now
+      isLive: true,
     };
     return NextResponse.json(weather, { status: 200 });
   } catch (e) {
     // On any error fall back to mock
-    return NextResponse.json(MOCK_WEATHER, { status: 200 });
+    return NextResponse.json({ ...MOCK_WEATHER, isLive: false }, { status: 200 });
   }
 }

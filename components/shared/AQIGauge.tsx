@@ -37,7 +37,15 @@ const AQIGauge: React.FC<AQIGaugeProps> = ({ value, size = 80 }) => {
 
   return (
     <div className="flex flex-col items-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter: 'drop-shadow(0 4px 16px rgba(13,27,42,0.15))' }}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius + 6}
+          stroke="rgba(15,139,141,0.08)"
+          strokeWidth={2}
+          fill="none"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}

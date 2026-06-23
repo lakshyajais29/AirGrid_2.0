@@ -6,6 +6,7 @@ import {
   TileLayer,
   CircleMarker,
   Popup,
+  Tooltip,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -143,6 +144,106 @@ function HeatmapLayer({ stations, pollutant }: { stations: Station[]; pollutant:
       }
     };
   }, [map, stations, pollutant]);
+
+  return null;
+}
+
+/* ── Custom Map Overlays ── */
+function MapBrandBadge() {
+  const map = useMap();
+  const controlRef = useRef<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (cancelled) return;
+      const L = (await import("leaflet")).default;
+
+      if (controlRef.current) {
+        map.removeControl(controlRef.current);
+      }
+
+      const CustomControl = L.Control.extend({
+        options: { position: "topleft" },
+        onAdd: function () {
+          const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+          div.innerHTML = "⬡ AIRGRID OS";
+          div.style.background = "rgba(13,27,42,0.85)";
+          div.style.color = "white";
+          div.style.fontFamily = "monospace";
+          div.style.padding = "6px 12px";
+          div.style.borderRadius = "6px";
+          div.style.border = "1px solid rgba(0,245,212,0.3)";
+          div.style.fontSize = "12px";
+          div.style.fontWeight = "bold";
+          div.style.pointerEvents = "none";
+          return div;
+        },
+      });
+
+      const control = new CustomControl();
+      control.addTo(map);
+      controlRef.current = control;
+    })();
+
+    return () => {
+      cancelled = true;
+      if (controlRef.current) {
+        map.removeControl(controlRef.current);
+        controlRef.current = null;
+      }
+    };
+  }, [map]);
+
+  return null;
+}
+
+function StatusOverlayBadge({ source }: { source: string }) {
+  const map = useMap();
+  const controlRef = useRef<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (cancelled) return;
+      const L = (await import("leaflet")).default;
+
+      if (controlRef.current) {
+        map.removeControl(controlRef.current);
+      }
+
+      const CustomControl = L.Control.extend({
+        options: { position: "topright" },
+        onAdd: function () {
+          const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+          div.innerHTML = source === "waqi" ? "● WAQI Live" : "● Mock Data";
+          div.style.background = "rgba(13,27,42,0.85)";
+          div.style.color = source === "waqi" ? "var(--safe-green)" : "var(--gov-gold)";
+          div.style.fontFamily = "monospace";
+          div.style.padding = "4px 8px";
+          div.style.borderRadius = "6px";
+          div.style.border = "1px solid rgba(0,245,212,0.3)";
+          div.style.fontSize = "10px";
+          div.style.pointerEvents = "none";
+          return div;
+        },
+      });
+
+      const control = new CustomControl();
+      control.addTo(map);
+      controlRef.current = control;
+    })();
+
+    return () => {
+      cancelled = true;
+      if (controlRef.current) {
+        map.removeControl(controlRef.current);
+        controlRef.current = null;
+      }
+    };
+  }, [map, source]);
 
   return null;
 }
@@ -391,13 +492,16 @@ export default function PollutionMap() {
           className="z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
 
           {showHeatmap && (
             <HeatmapLayer stations={getDisplayStations} pollutant={pollutant} />
           )}
+
+          <MapBrandBadge />
+          <StatusOverlayBadge source={source} />
 
           {getDisplayStations.map((s) => {
             const displayVal = s[pollutant];
@@ -414,6 +518,25 @@ export default function PollutionMap() {
                   weight: 2,
                 }}
               >
+                <Tooltip permanent direction="top" offset={[0, -22]} opacity={1}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#0D1B2A' }}>
+                      {s.name}
+                    </span>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                      color: '#fff',
+                      background: markerColor,
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      lineHeight: '1.4',
+                    }}>
+                      {s.aqi}
+                    </span>
+                  </span>
+                </Tooltip>
                 <Popup maxWidth={340} minWidth={280}>
                   <div style={{ fontFamily: "var(--font-body)" }}>
                     {/* Header */}

@@ -77,51 +77,56 @@ function generateMock() {
   });
 }
 
-/* ── Fetch live data from WAQI ── */
+/* ── Fetch live data from WAQI using lat/lng geo endpoint ── */
 async function fetchLive(token: string) {
   const results = await Promise.allSettled(
     DELHI_STATIONS.map(async (s) => {
-      const res = await fetch(
-        `https://api.waqi.info/feed/@${s.id}/?token=${token}`,
-        { next: { revalidate: 60 } }
-      );
+      // Use the geo-based feed endpoint — most reliable, no station ID needed
+      const url = `https://api.waqi.info/feed/geo:${s.lat};${s.lng}/?token=${token}`;
+      const res = await fetch(url, { next: { revalidate: 60 } });
       const json = await res.json();
-      if (json.status !== "ok") throw new Error(json.data ?? "WAQI error");
 
-      const d   = json.data;
-      const aqi = d.aqi ?? 0;
+      if (json.status !== "ok") {
+        console.warn(`WAQI error for ${s.name}:`, json.data ?? json.status);
+        throw new Error(json.data ?? "WAQI error");
+      }
+
+      const d    = json.data;
+      const aqi  = typeof d.aqi === "number" ? d.aqi : 0;
       const iaqi = d.iaqi ?? {};
-      const minutesAgo = Math.round(
+      const minutesAgo = Math.max(0, Math.round(
         (Date.now() - new Date(d.time?.iso ?? Date.now()).getTime()) / 60_000
-      );
+      ));
 
       return {
-        id:       s.id,
-        name:     s.name,
-        lat:      s.lat,
-        lng:      s.lng,
+        id:        s.id,
+        name:      s.name,           // keep our canonical name, not WAQI's
+        lat:       d.city?.geo?.[0] ?? s.lat,
+        lng:       d.city?.geo?.[1] ?? s.lng,
         aqi,
-        pm25:     iaqi.pm25?.v ?? null,
-        pm10:     iaqi.pm10?.v ?? null,
-        no2:      iaqi.no2?.v  ?? null,
-        co:       iaqi.co?.v   ?? null,
-        o3:       iaqi.o3?.v   ?? null,
-        so2:      iaqi.so2?.v  ?? null,
-        color:    aqiColor(aqi),
-        updated:  d.time?.iso ?? new Date().toISOString(),
+        pm25:      iaqi.pm25?.v ?? null,
+        pm10:      iaqi.pm10?.v ?? null,
+        no2:       iaqi.no2?.v  ?? null,
+        co:        iaqi.co?.v   ?? null,
+        o3:        iaqi.o3?.v   ?? null,
+        so2:       iaqi.so2?.v  ?? null,
+        color:     aqiColor(aqi),
+        updated:   d.time?.iso ?? new Date().toISOString(),
         minutesAgo,
-        history:  null,   // WAQI free tier doesn't give history
+        dominentpol: d.dominentpol ?? null,
+        history:   null,  // WAQI free tier doesn't include history
       };
     })
   );
 
   return results.map((r, i) => {
     if (r.status === "fulfilled") return r.value;
-    // fallback to mock for failed stations
+    console.warn(`Station ${DELHI_STATIONS[i].name} failed, using mock fallback`);
     const mock = generateMock();
     return mock[i];
   });
 }
+
 
 /* ── GET handler ── */
 export async function GET() {

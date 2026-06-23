@@ -16,11 +16,13 @@ const mockAlerts: Alert[] = [
 
 export const AlertCommandStrip: React.FC = () => {
   return (
-    <div className="bg-white rounded-lg shadow p-4 overflow-x-auto whitespace-nowrap">
+    <div className="panel-card p-4 overflow-x-auto whitespace-nowrap" style={{ borderTop: '3px solid var(--accent-teal)' }}>
+      <div className="section-label">Real-Time Notifications</div>
       <h2 className="text-lg font-semibold mb-2 text-navy">Active Alerts</h2>
       <div className="flex space-x-4">
         {mockAlerts.map((a) => (
-          <div key={a.id} className="flex items-center bg-critical-red/10 text-critical-red px-3 py-1 rounded">
+          <div key={a.id} className="flex items-center px-4 py-2 rounded text-critical-red" style={{ borderLeft: '4px solid #C0392B', backgroundImage: 'linear-gradient(90deg, rgba(192,57,43,0.06), transparent)' }}>
+            <span className="live-dot" style={{ backgroundColor: '#C0392B' }} />
             <span className="font-medium">{a.ward} Ward</span>
             <span className="mx-2">|</span>
             <span>{a.pollutant}: {a.value}µg/m³ ({'>'}{a.threshold})</span>
