@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { AlertTriangle, Clock, Search, Activity, FileText, Wind, Cpu, MapPin, Globe } from "lucide-react";
 
 /* ─── Emission source types ─── */
 type SourceType = "construction" | "fire" | "industrial" | "stubble" | "vehicle" | "waste";
@@ -22,13 +23,13 @@ interface EmissionEvent {
   drone_dispatched: boolean;
 }
 
-const SOURCE_META: Record<SourceType, { icon: string; label: string; color: string; bg: string }> = {
-  construction:  { icon: "🏗️", label: "Construction Dust", color: "#C9A84C", bg: "#FFFBEB" },
-  fire:          { icon: "🔥", label: "Open Fire / Burning", color: "#C0392B", bg: "#FFF5F5" },
-  industrial:    { icon: "🏭", label: "Industrial Emission", color: "#7B241C", bg: "#FDF2F8" },
-  stubble:       { icon: "🌾", label: "Stubble Burning", color: "#E67E22", bg: "#FEF9F0" },
-  vehicle:       { icon: "🚛", label: "Heavy Traffic / Vehicles", color: "#1A5276", bg: "#EBF5FB" },
-  waste:         { icon: "♻️", label: "Waste / Landfill", color: "#6C3483", bg: "#F5EEF8" },
+const SOURCE_META: Record<SourceType, { label: string; color: string; bg: string }> = {
+  construction:  { label: "Construction Dust", color: "#C9A84C", bg: "#FFFBEB" },
+  fire:          { label: "Open Fire / Burning", color: "#C0392B", bg: "#FFF5F5" },
+  industrial:    { label: "Industrial Emission", color: "#7B241C", bg: "#FDF2F8" },
+  stubble:       { label: "Stubble Burning", color: "#E67E22", bg: "#FEF9F0" },
+  vehicle:       { label: "Heavy Traffic / Vehicles", color: "#1A5276", bg: "#EBF5FB" },
+  waste:         { label: "Waste / Landfill", color: "#6C3483", bg: "#F5EEF8" },
 };
 
 const SEVERITY_META: Record<string, { color: string; label: string }> = {
@@ -37,10 +38,10 @@ const SEVERITY_META: Record<string, { color: string; label: string }> = {
   moderate: { color: "#FFC000", label: "MODERATE" },
 };
 
-const DETECTOR_META: Record<string, { icon: string; label: string }> = {
-  flight_sensor: { icon: "✈️", label: "Flight Sensor (Aerial)" },
-  ground_sensor: { icon: "📡", label: "Ground CPCB Sensor" },
-  satellite:     { icon: "🛰️", label: "Satellite Imagery" },
+const DETECTOR_META: Record<string, { label: string; icon: React.ReactNode }> = {
+  flight_sensor: { label: "Flight Sensor (Aerial)", icon: <Wind size={12} color="#0F8B8D" /> },
+  ground_sensor: { label: "Ground CPCB Sensor",    icon: <MapPin size={12} color="#0F8B8D" /> },
+  satellite:     { label: "Satellite Imagery",      icon: <Globe size={12} color="#0F8B8D" /> },
 };
 
 /* ─── Mock incident data ─── */
@@ -128,7 +129,7 @@ function SourceSummary({ events }: { events: EmissionEvent[] }) {
             background: meta.bg, border: `1px solid ${meta.color}30`,
             borderRadius: "20px", padding: "5px 12px", fontSize: "12px",
           }}>
-            <span>{meta.icon}</span>
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: meta.color, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontWeight: 600, color: meta.color }}>{counts[src]}</span>
             <span style={{ color: "#4A5568" }}>{meta.label}</span>
           </div>
@@ -177,16 +178,17 @@ export default function ZonePollutionSources() {
         }}>
           <div>
             <div style={{ fontFamily: "monospace", fontSize: "10px", letterSpacing: "0.25em", color: "#C9A84C", marginBottom: "8px" }}>
-              ⬡ AIRGRID OS · EMISSION ESTIMATOR
+              AIRGRID OS · EMISSION ESTIMATOR
             </div>
             <h1 style={{ color: "white", fontSize: "24px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>
               Zone Pollution Source Identification
             </h1>
             <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "6px", margin: "6px 0 0" }}>
-              AI-assisted detection of construction, fire, industrial & vehicular emission events via flight sensors · Satellite · CPCB ground network
+              Emission source detection via flight sensors, CPCB ground stations, and satellite imagery
             </p>
             <div style={{ marginTop: "10px", display: "inline-block", padding: "4px 12px", background: "rgba(192,57,43,0.2)", border: "1px solid rgba(192,57,43,0.4)", borderRadius: "20px", fontSize: "11px", color: "#FF8A80" }}>
-              ⚠️ DEMO MODE — Data simulates aerial sensor readings from flight corridors over Delhi
+              <AlertTriangle size={11} style={{ verticalAlign: "middle", marginRight: "4px" }} />
+              DEMO MODE — Data simulates aerial sensor readings from flight corridors over Delhi
             </div>
           </div>
 
@@ -237,7 +239,12 @@ export default function ZonePollutionSources() {
                     cursor: "pointer",
                   }}
                 >
-                  {meta ? `${meta.icon} ${meta.label.split(" ")[0]}` : "All"}
+                {meta ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                    <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: meta.color, display: "inline-block" }} />
+                    {meta.label.split(" ")[0]}
+                  </span>
+                ) : "All"}
                 </button>
               );
             })}
@@ -302,7 +309,7 @@ export default function ZonePollutionSources() {
                         alignItems: "center", justifyContent: "center", fontSize: "20px",
                         background: src.bg, border: `1px solid ${src.color}30`, flexShrink: 0,
                       }}>
-                        {src.icon}
+                        <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: src.color, opacity: 0.85 }} />
                       </div>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -311,11 +318,11 @@ export default function ZonePollutionSources() {
                             fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px",
                             background: `${sev.color}15`, color: sev.color, border: `1px solid ${sev.color}30`,
                           }}>
-                            ● {sev.label}
+                            {sev.label}
                           </span>
                           {event.status === "contained" && (
                             <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px", background: "#F0FFF4", color: "#1E8449", border: "1px solid #C6F6D5" }}>
-                              ✓ CONTAINED
+                            CONTAINED
                             </span>
                           )}
                         </div>
@@ -346,11 +353,11 @@ export default function ZonePollutionSources() {
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                   }}>
                     <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                      <span style={{ fontSize: "11px", color: "#8A9BB0" }}>
+                      <span style={{ fontSize: "11px", color: "#8A9BB0", display: "flex", alignItems: "center", gap: "4px" }}>
                         {det.icon} <strong style={{ color: "#4A5568" }}>{det.label}</strong>
                       </span>
-                      <span style={{ fontSize: "11px", color: "#8A9BB0" }}>
-                        🕐 Detected {event.detected_at}
+                      <span style={{ fontSize: "11px", color: "#8A9BB0", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <Clock size={11} /> {event.detected_at}
                       </span>
                       <span style={{ fontSize: "11px", fontFamily: "monospace", color: "#8A9BB0" }}>
                         {event.id}
@@ -358,7 +365,7 @@ export default function ZonePollutionSources() {
                     </div>
                     {isDroneDispatched ? (
                       <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F8B8D", display: "flex", alignItems: "center", gap: "4px" }}>
-                        🚁 Drone Dispatched
+                        <Cpu size={13} color="#0F8B8D" /> Drone Dispatched
                       </span>
                     ) : (
                       <button
@@ -370,7 +377,7 @@ export default function ZonePollutionSources() {
                           display: "flex", alignItems: "center", gap: "4px",
                         }}
                       >
-                        🚁 Dispatch Drone
+                        <Cpu size={12} color="#C0392B" style={{ flexShrink: 0 }} /> Dispatch Drone
                       </button>
                     )}
                   </div>
@@ -386,14 +393,16 @@ export default function ZonePollutionSources() {
                 background: "white", borderRadius: "14px", border: "1px solid #E2E8F0",
                 padding: "40px 24px", textAlign: "center",
               }}>
-                <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔍</div>
+                <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><Search size={40} color="#8A9BB0" /></div>
                 <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "16px" }}>Select an Event</div>
                 <div style={{ color: "#8A9BB0", fontSize: "13px", marginTop: "6px" }}>
                   Click any emission event to view full analysis, source attribution, and recommended action.
                 </div>
                 {/* flight detection explanation */}
                 <div style={{ marginTop: "24px", textAlign: "left", padding: "16px", background: "#F0FDFC", borderRadius: "10px", border: "1px solid #B2EBF2" }}>
-                  <div style={{ fontWeight: 700, color: "#0F8B8D", fontSize: "13px", marginBottom: "8px" }}>✈️ How Flight Detection Works</div>
+                  <div style={{ fontWeight: 700, color: "#0F8B8D", fontSize: "13px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+                    <Wind size={13} /> How Flight Detection Works
+                  </div>
                   <ul style={{ fontSize: "12px", color: "#4A5568", lineHeight: 1.8, paddingLeft: "16px", margin: 0 }}>
                     <li>Aircraft equipped with AQI sensors fly standard corridors over Delhi</li>
                     <li>Onboard spectrometers detect PM2.5, NO₂, CO, SO₂ in real-time</li>
@@ -427,10 +436,10 @@ export default function ZonePollutionSources() {
                       {/* Severity + status */}
                       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                         <span style={{ fontSize: "11px", fontWeight: 700, padding: "4px 12px", borderRadius: "20px", background: `${sev.color}15`, color: sev.color, border: `1px solid ${sev.color}30` }}>
-                          ● {sev.label}
+                          {sev.label}
                         </span>
                         <span style={{ fontSize: "11px", fontWeight: 700, padding: "4px 12px", borderRadius: "20px", background: src.bg, color: src.color, border: `1px solid ${src.color}30` }}>
-                          {src.icon} {src.label}
+                          {src.label}
                         </span>
                         <span style={{
                           fontSize: "11px", fontWeight: 700, padding: "4px 12px", borderRadius: "20px",
@@ -446,7 +455,7 @@ export default function ZonePollutionSources() {
                         {[
                           { label: "PM2.5 Contribution", value: `+${selectedEvent.pm25_contribution} µg/m³`, color: sev.color },
                           { label: "CO₂ Load (Today)", value: `${selectedEvent.co2_tonnes_day} tonnes`, color: "#E67E22" },
-                          { label: "Detection Method", value: det.icon + " " + det.label, color: "#0F8B8D" },
+                          { label: "Detection Method", value: det.label, color: "#0F8B8D" },
                           { label: "Detected At", value: selectedEvent.detected_at, color: "#4A5568" },
                         ].map(m => (
                           <div key={m.label} style={{ background: "#F8FAFF", borderRadius: "8px", padding: "12px" }}>
@@ -464,7 +473,9 @@ export default function ZonePollutionSources() {
 
                       {/* Estimated health impact */}
                       <div style={{ padding: "12px", background: "#FFF5F5", borderRadius: "10px", border: "1px solid rgba(192,57,43,0.15)", marginBottom: "16px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#C0392B", marginBottom: "8px" }}>⚕️ Estimated Health Impact</div>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#C0392B", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+                          <Activity size={12} color="#C0392B" /> Estimated Health Impact
+                        </div>
                         <div style={{ fontSize: "12px", color: "#4A5568", lineHeight: 1.7 }}>
                           <div>• Population at risk: <strong>{Math.round(selectedEvent.pm25_contribution * 800).toLocaleString()} residents</strong></div>
                           <div>• Respiratory risk index: <strong style={{ color: sev.color }}>{selectedEvent.severity === "critical" ? "Very High" : selectedEvent.severity === "high" ? "High" : "Moderate"}</strong></div>
@@ -474,7 +485,9 @@ export default function ZonePollutionSources() {
 
                       {/* Recommended actions */}
                       <div style={{ padding: "12px", background: "#F0FDFC", borderRadius: "10px", border: "1px solid rgba(15,139,141,0.2)", marginBottom: "16px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F8B8D", marginBottom: "8px" }}>📋 Recommended Actions</div>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F8B8D", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+                          <FileText size={12} color="#0F8B8D" /> Recommended Actions
+                        </div>
                         <div style={{ fontSize: "12px", color: "#0D1B2A", lineHeight: 1.8 }}>
                           {selectedEvent.source === "construction" && <>
                             <div>1. Issue stop-work notice until dust suppression active</div>
@@ -512,7 +525,7 @@ export default function ZonePollutionSources() {
                       {/* Drone dispatch */}
                       {isDroneDispatched ? (
                         <div style={{ padding: "12px 16px", background: "rgba(15,139,141,0.08)", borderRadius: "10px", border: "1px solid rgba(15,139,141,0.25)", display: "flex", alignItems: "center", gap: "10px" }}>
-                          <span style={{ fontSize: "24px" }}>🚁</span>
+                          <Cpu size={22} color="#0F8B8D" />
                           <div>
                             <div style={{ fontWeight: 700, color: "#0F8B8D", fontSize: "13px" }}>Drone Dispatched</div>
                             <div style={{ fontSize: "11px", color: "#8A9BB0", marginTop: "2px" }}>Monitoring drone en-route to {selectedEvent.zone}. ETA ~12 minutes.</div>
@@ -529,7 +542,7 @@ export default function ZonePollutionSources() {
                             display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
                           }}
                         >
-                          🚁 Dispatch Monitoring Drone to {selectedEvent.zone}
+                          <Cpu size={14} color="#fff" style={{ flexShrink: 0 }} /> Dispatch Monitoring Drone to {selectedEvent.zone}
                         </button>
                       )}
                     </div>

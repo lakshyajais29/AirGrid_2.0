@@ -5,6 +5,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIRGRID OS | Delhi Air Intelligence Platform",
-  description: "Hyperlocal Ward-Level Air Pollution Intelligence Platform",
+  title: "AIRGRID OS | Delhi Air Quality Command Centre",
+  description: "Ward-level air quality monitoring for Delhi — live data across 272 wards, 46 CPCB stations.",
 };
 
 export const viewport: Viewport = {
@@ -35,6 +37,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full min-h-full flex flex-col antialiased">
+        <Suspense fallback={null}>
+          <DemoModeBanner />
+        </Suspense>
         <LoadingScreen />
         <Header />
         <div className="flex flex-1 overflow-hidden">

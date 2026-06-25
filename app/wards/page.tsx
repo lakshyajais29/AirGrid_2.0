@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { AlertTriangle, Clock, Map, Printer, FileText, Cpu } from "lucide-react";
 
 /* ─── Types ─── */
 interface Station {
@@ -57,10 +58,10 @@ function exposureBarColor(score: number) {
 }
 
 function droneRec(aqi: number, exposure: number): string {
-  if (aqi > 300 || exposure >= 9) return "🚨 Immediate drone deployment — critical pollution + high aviation impact.";
-  if (aqi > 200 || exposure >= 7) return "⚠️ Drone patrol recommended within 4h. Anti-smog gun activation advised.";
-  if (aqi > 150 || exposure >= 5) return "🔶 Schedule drone inspection within 24h.";
-  return "✅ No immediate action required. Routine monitoring in 72h.";
+  if (aqi > 300 || exposure >= 9) return "Immediate drone deployment — critical pollution + high aviation impact.";
+  if (aqi > 200 || exposure >= 7) return "Drone patrol recommended within 4h. Anti-smog gun activation advised.";
+  if (aqi > 150 || exposure >= 5) return "Schedule drone inspection within 24h.";
+  return "No immediate action required. Routine monitoring in 72h.";
 }
 
 /* ─── Zone card component ─── */
@@ -108,8 +109,9 @@ function ZoneCard({ zone, station, isSelected, onClick }: {
         <span style={{ fontSize: "10px", background: "#F1F5F9", borderRadius: "4px", padding: "2px 6px", color: "#4A5568" }}>
           NO₂: {station?.no2 ?? "—"}
         </span>
-        <span style={{ fontSize: "10px", background: "#F1F5F9", borderRadius: "4px", padding: "2px 6px", color: "#C9A84C" }}>
-          ✈ Exposure: {zone.aviation_exposure}/10
+        <span style={{ fontSize: "10px", background: "#F1F5F9", borderRadius: "4px", padding: "2px 6px", color: "#C9A84C", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+          <Cpu size={10} />
+          Exposure: {zone.aviation_exposure}/10
         </span>
       </div>
 
@@ -180,9 +182,9 @@ export default function WardsPage() {
         }}>
           <div>
             <div style={{ fontFamily: "monospace", fontSize: "10px", letterSpacing: "0.25em", color: "#C9A84C", marginBottom: "8px" }}>
-              ⬡ AIRGRID OS · WARD & ZONE ANALYSIS
+              AIRGRID OS · WARD & ZONE ANALYSIS
             </div>
-            <h1 style={{ color: "white", fontSize: "24px", fontWeight: 700, margin: 0 }}>Delhi Zone Air Quality Intelligence</h1>
+            <h1 style={{ color: "white", fontSize: "24px", fontWeight: 700, margin: 0 }}>Delhi Ward Air Quality Data</h1>
             <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "4px" }}>
               Real-time AQI · Aviation exposure · Drone deployment recommendations
             </p>
@@ -225,8 +227,8 @@ export default function WardsPage() {
                 </button>
               ))}
               {lastUpdate && (
-                <span style={{ marginLeft: "auto", fontSize: "11px", color: "#8A9BB0", fontFamily: "monospace" }}>
-                  ● Updated {lastUpdate}
+                <span style={{ marginLeft: "auto", fontSize: "11px", color: "#8A9BB0", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <Clock size={10} /> Updated {lastUpdate}
                 </span>
               )}
             </div>
@@ -255,15 +257,16 @@ export default function WardsPage() {
                   background: "rgba(255,255,255,0.1)", color: "white", border: "1px solid rgba(255,255,255,0.2)",
                   borderRadius: "6px", padding: "6px 14px", fontSize: "12px", cursor: "pointer",
                 }}>
-                  🖨 Print Report
+                  <Printer size={13} style={{ marginRight: "4px", verticalAlign: "middle" }} />
+                  Print Report
                 </button>
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                   <thead>
                     <tr style={{ background: "#F8FAFF" }}>
-                      {["Rank", "Zone", "Area", "AQI", "PM2.5", "NO₂", "✈ Exposure", "Status"].map(h => (
-                        <th key={h} style={{ padding: "10px 14px", textAlign: h === "AQI" || h === "PM2.5" || h === "NO₂" || h === "✈ Exposure" ? "right" : "left", fontWeight: 600, fontSize: "11px", color: "#8A9BB0", letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: "1px solid #E2E8F0" }}>
+                      {["Rank", "Zone", "Area", "AQI", "PM2.5", "NO₂", "Exposure", "Status"].map(h => (
+                        <th key={h} style={{ padding: "10px 14px", textAlign: h === "AQI" || h === "PM2.5" || h === "NO₂" || h === "Exposure" ? "right" : "left", fontWeight: 600, fontSize: "11px", color: "#8A9BB0", letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: "1px solid #E2E8F0" }}>
                           {h}
                         </th>
                       ))}
@@ -322,7 +325,7 @@ export default function WardsPage() {
                 background: "white", borderRadius: "14px", border: "1px solid #E2E8F0",
                 padding: "40px 24px", textAlign: "center",
               }}>
-                <div style={{ fontSize: "40px", marginBottom: "12px" }}>🗺️</div>
+                <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><Map size={40} color="#8A9BB0" /></div>
                 <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "16px" }}>Select a Zone</div>
                 <div style={{ color: "#8A9BB0", fontSize: "13px", marginTop: "6px" }}>
                   Click any zone card or table row to view detailed pollution analysis and drone recommendations.
@@ -416,7 +419,9 @@ export default function WardsPage() {
                     background: selectedStation && selectedStation.aqi > 300 ? "rgba(192,57,43,0.06)" : "rgba(15,139,141,0.06)",
                     border: `1px solid ${selectedStation && selectedStation.aqi > 300 ? "rgba(192,57,43,0.2)" : "rgba(15,139,141,0.2)"}`,
                   }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#8A9BB0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>🚁 Drone Action Recommendation</div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#8A9BB0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <Cpu size={12} color="#8A9BB0" /> Drone Action Recommendation
+                    </div>
                     <div style={{ fontSize: "13px", color: "#0D1B2A", lineHeight: 1.6 }}>
                       {droneRec(selectedStation?.aqi ?? 0, selectedZone.aviation_exposure)}
                     </div>
@@ -443,7 +448,8 @@ export default function WardsPage() {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    📄 Generate Ward Report (PDF)
+                    <FileText size={14} style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                     Generate Ward Report (PDF)
                   </button>
                 </div>
               </div>

@@ -1,13 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useState, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { HiMenu, HiMap, HiCloud, HiChartBar, HiUsers, HiDocumentText, HiAcademicCap, HiShieldCheck, HiCalendar, HiCog, HiFlag } from "react-icons/hi";
 import { RiFlightTakeoffLine, RiFileDownloadLine, RiHeartLine } from "react-icons/ri";
 
-const Sidebar = () => {
+const SidebarContent = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  if (searchParams.get("demo") === "true") {
+    return null;
+  }
 
   const menuItems = [
     { name: "Command Centre", href: "/", icon: <HiMenu /> },
@@ -28,35 +33,33 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          onClick={() => setIsOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 99,
-            background: "rgba(0,0,0,0.2)",
-            transition: "opacity 0.3s ease",
-          }}
-        />
-      )}
-
-      {/* Sidebar */}
+      <div 
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 99,
+          background: "rgba(13,27,42,0.25)",
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? "all" : "none",
+          transition: "opacity 0.28s"
+        }}
+        onClick={() => setIsOpen(false)}
+      />
+      
       <nav
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
         style={{
           position: "fixed",
           left: 0,
-          top: 0,
-          height: "100vh",
-          width: "256px",
+          top: "64px",
+          height: "calc(100vh - 64px)",
+          width: "240px",
           zIndex: 100,
+          transform: isOpen ? "translateX(0)" : "translateX(-232px)",
+          transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
           background: "linear-gradient(180deg, #0D1B2A 0%, #1A3A5C 100%)",
-          borderRight: "1px solid rgba(15,139,141,0.3)",
-          transform: isOpen ? "translateX(0)" : "translateX(-248px)",
-          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          borderRight: "1px solid rgba(15,139,141,0.2)",
           display: "flex",
           flexDirection: "column",
         }}
@@ -100,7 +103,7 @@ const Sidebar = () => {
             fontWeight: "bold",
             opacity: 0.8,
           }}>
-            ⬡ AIRGRID OS
+            AIRGRID OS
           </div>
         </div>
 
@@ -164,4 +167,10 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default function Sidebar() {
+  return (
+    <Suspense fallback={<div className="w-16 h-full bg-[#0D1B2A] border-r border-[#1e293b]" />}>
+      <SidebarContent />
+    </Suspense>
+  );
+}

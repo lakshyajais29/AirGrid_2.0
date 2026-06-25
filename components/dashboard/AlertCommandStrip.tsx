@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AlertTriangle, Info, CheckCircle, Circle } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,13 +29,13 @@ interface AlertState extends Alert {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const INITIAL_ALERTS: Alert[] = [
-  { id: 1,  ward: "Mahipalpur",      pollutant: "PM2.5", value: 245, threshold: 200, time: "14:30", severity: "critical", title: "PM2.5 Critically Elevated" },
-  { id: 2,  ward: "Vasant Kunj",     pollutant: "NO₂",   value: 189, threshold: 180, time: "15:15", severity: "warning",  title: "NO₂ Above Threshold" },
-  { id: 3,  ward: "Dwarka",          pollutant: "PM10",  value: 320, threshold: 250, time: "13:50", severity: "critical", title: "PM10 Hazardous Level" },
-  { id: 4,  ward: "Rohini",          pollutant: "CO",    value: 4.2, threshold: 4.0, time: "16:00", severity: "warning",  title: "CO Slightly Elevated" },
-  { id: 5,  ward: "Lajpat Nagar",    pollutant: "SO₂",   value: 22,  threshold: 20,  time: "12:45", severity: "info",     title: "SO₂ Monitoring Notice" },
-  { id: 6,  ward: "Saket",           pollutant: "AQI",   value: 410, threshold: 400, time: "11:30", severity: "critical", title: "AQI Severe — Action Required" },
-  { id: 7,  ward: "Okhla",           pollutant: "PM2.5", value: 178, threshold: 160, time: "10:20", severity: "warning",  title: "PM2.5 Rising Trend" },
+  { id: 1,  ward: "Mahipalpur",   pollutant: "PM2.5", value: 245, threshold: 200, time: "14:30", severity: "critical", title: "PM2.5 spike — 245 µg/m³" },
+  { id: 2,  ward: "Vasant Kunj",  pollutant: "NO₂",   value: 189, threshold: 180, time: "15:15", severity: "warning",  title: "NO₂ above limit — 189 ppb" },
+  { id: 3,  ward: "Dwarka",       pollutant: "PM10",  value: 320, threshold: 250, time: "13:50", severity: "critical", title: "PM10 hazardous — 320 µg/m³" },
+  { id: 4,  ward: "Rohini",       pollutant: "CO",    value: 4.2, threshold: 4.0, time: "16:00", severity: "warning",  title: "CO elevated — 4.2 mg/m³" },
+  { id: 5,  ward: "Lajpat Nagar", pollutant: "SO₂",   value: 22,  threshold: 20,  time: "12:45", severity: "info",     title: "SO₂ above baseline — 22 ppb" },
+  { id: 6,  ward: "Saket",        pollutant: "AQI",   value: 410, threshold: 400, time: "11:30", severity: "critical", title: "AQI Severe — 410" },
+  { id: 7,  ward: "Okhla",        pollutant: "PM2.5", value: 178, threshold: 160, time: "10:20", severity: "warning",  title: "PM2.5 rising — 178 µg/m³" },
 ];
 
 const TEAMS = [
@@ -89,10 +90,10 @@ function playBeep() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const SEVERITY_CONFIG: Record<Severity, { border: string; icon: string; label: string; bgTint: string; pulse: boolean }> = {
-  critical: { border: "#C0392B", icon: "🔴", label: "Critical",  bgTint: "rgba(192,57,43,0.04)", pulse: true  },
-  warning:  { border: "#E67E22", icon: "🟠", label: "Warning",   bgTint: "rgba(230,126,34,0.04)", pulse: false },
-  info:     { border: "#2980B9", icon: "🔵", label: "Info",      bgTint: "rgba(41,128,185,0.04)", pulse: false },
+const SEVERITY_CONFIG: Record<Severity, { border: string; icon: React.ReactNode; label: string; bgTint: string; pulse: boolean }> = {
+  critical: { border: "#C0392B", icon: <AlertTriangle size={16} color="#C0392B" />, label: "Critical",  bgTint: "rgba(192,57,43,0.04)", pulse: true  },
+  warning:  { border: "#E67E22", icon: <AlertTriangle size={16} color="#E67E22" />, label: "Warning",   bgTint: "rgba(230,126,34,0.04)", pulse: false },
+  info:     { border: "#2980B9", icon: <Info size={16} color="#2980B9" />,          label: "Info",      bgTint: "rgba(41,128,185,0.04)", pulse: false },
 };
 
 interface AlertCardProps {
@@ -160,7 +161,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew }: AlertCardProps) {
       <div className="flex items-start justify-between gap-3">
         {/* Left: icon + info */}
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span style={{ fontSize: "18px", lineHeight: 1, marginTop: "2px", flexShrink: 0 }}>
+          <span style={{ lineHeight: 1, marginTop: "2px", flexShrink: 0, display: "flex", alignItems: "center" }}>
             {cfg.icon}
           </span>
           <div className="flex-1 min-w-0">
@@ -222,7 +223,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew }: AlertCardProps) {
                 marginBottom: "8px",
               }}
             >
-              {alert.pollutant}: {alert.value} µg/m³ · Threshold {alert.threshold} ·{" "}
+              {alert.pollutant}: {alert.value}{alert.pollutant === "CO" ? " mg/m³" : alert.pollutant === "SO₂" || alert.pollutant === "NO₂" ? " ppb" : alert.pollutant === "AQI" ? "" : " µg/m³"} · Threshold {alert.threshold} ·{" "}
               <span style={{ color: "#A0AEC0" }}>
                 {alert.time} IST · {relativeTime(alert.time)}
               </span>
@@ -245,7 +246,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew }: AlertCardProps) {
                     fontWeight: 600,
                   }}
                 >
-                  ✓ Acknowledged by Operator
+                  Acknowledged
                   {alert.acknowledgedAt && (
                     <span style={{ fontWeight: 400, opacity: 0.75 }}>
                       {" "}at {alert.acknowledgedAt}
@@ -268,7 +269,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew }: AlertCardProps) {
                     fontWeight: 600,
                   }}
                 >
-                  📋 Assigned to: {alert.assignedTeam}
+                  Assigned: {alert.assignedTeam}
                 </span>
               )}
             </div>
@@ -475,12 +476,12 @@ export const AlertCommandStrip: React.FC = () => {
     return a.severity === filter && !a.acknowledged;
   });
 
-  const filters: { key: FilterType; label: string; icon: string }[] = [
-    { key: "all",          label: "All",         icon: "≡" },
-    { key: "critical",     label: "Critical",    icon: "🔴" },
-    { key: "warning",      label: "Warning",     icon: "🟠" },
-    { key: "info",         label: "Info",        icon: "🔵" },
-    { key: "acknowledged", label: "Acknowledged", icon: "✓" },
+  const filters: { key: FilterType; label: string; icon: React.ReactNode }[] = [
+    { key: "all",          label: "All",          icon: <Circle size={10} color="#8A9BB0" /> },
+    { key: "critical",     label: "Critical",     icon: <Circle size={10} fill="#C0392B" color="#C0392B" /> },
+    { key: "warning",      label: "Warning",      icon: <Circle size={10} fill="#E67E22" color="#E67E22" /> },
+    { key: "info",         label: "Info",         icon: <Circle size={10} fill="#2980B9" color="#2980B9" /> },
+    { key: "acknowledged", label: "Acknowledged", icon: <CheckCircle size={10} color="#166534" /> },
   ];
 
   return (
@@ -512,7 +513,7 @@ export const AlertCommandStrip: React.FC = () => {
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="section-label">Real-Time Notifications</div>
+            <div className="section-label">Active Alerts</div>
             <h2
               style={{
                 fontSize: "17px",
@@ -521,7 +522,7 @@ export const AlertCommandStrip: React.FC = () => {
                 margin: 0,
               }}
             >
-              Active Alerts
+              Alert Command
             </h2>
           </div>
 
@@ -573,7 +574,16 @@ export const AlertCommandStrip: React.FC = () => {
                 (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
               }}
             >
-              {soundOn ? "🔔" : "🔕"}
+              {soundOn ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 0 1 0 8" /><path d="M15.54 11a3 3 0 0 1 0 2" />
+                  <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 5 6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
@@ -600,7 +610,7 @@ export const AlertCommandStrip: React.FC = () => {
               textAlign: "left",
             }}
           >
-            <span style={{ fontSize: "20px" }}>🔴</span>
+            <Circle size={20} fill="#C0392B" color="#C0392B" />
             <div>
               <div style={{ fontSize: "20px", fontWeight: 800, color: "#C0392B", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
                 {criticalCount}
@@ -628,7 +638,7 @@ export const AlertCommandStrip: React.FC = () => {
               textAlign: "left",
             }}
           >
-            <span style={{ fontSize: "20px" }}>🟠</span>
+            <Circle size={20} fill="#E67E22" color="#E67E22" />
             <div>
               <div style={{ fontSize: "20px", fontWeight: 800, color: "#B7580E", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
                 {warningCount}
@@ -656,7 +666,7 @@ export const AlertCommandStrip: React.FC = () => {
               textAlign: "left",
             }}
           >
-            <span style={{ fontSize: "20px" }}>✅</span>
+            <CheckCircle size={20} color="#166534" />
             <div>
               <div style={{ fontSize: "20px", fontWeight: 800, color: "#166534", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
                 {acknowledgedCount}
@@ -734,7 +744,7 @@ export const AlertCommandStrip: React.FC = () => {
                 color: "#8A9BB0",
               }}
             >
-              <div style={{ fontSize: "40px", marginBottom: "12px" }}>✅</div>
+              <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><CheckCircle size={40} color="#166534" /></div>
               <div style={{ fontSize: "15px", fontWeight: 600, color: "#4A6080", marginBottom: "4px" }}>
                 No active alerts for selected filter
               </div>

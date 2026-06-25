@@ -1,13 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { AQIGauge } from "@/components/shared/AQIGauge";
-import { GRAPBanner } from "@/components/shared/GRAPBanner";
-import { LiveFlightCounter } from "@/components/dashboard/LiveFlightCounter";
-import { WeatherCard } from "@/components/dashboard/WeatherCard";
-import { EmissionTodayCard } from "@/components/dashboard/EmissionTodayCard";
+import { AlertCommandStrip } from "@/components/dashboard/AlertCommandStrip";
 import { DataFreshness } from "@/components/dashboard/DataFreshness";
-import { AQITrendSparkline } from "@/components/dashboard/AQITrendSparkline";
+import { WorstWardsTable } from "@/components/dashboard/WorstWardsTable";
+
+/* ── Lazy-load the Leaflet map (SSR=false required) ── */
+const PollutionMap = dynamic(
+  () => import("@/components/modules/pollution/PollutionMap"),
+  { ssr: false, loading: () => <MapPlaceholder /> }
+);
 
 /* ─── Types ─── */
 interface Station {
@@ -54,10 +59,26 @@ function aqiColor(aqi: number) {
 }
 
 function droneAction(aqi: number): string {
-  if (aqi > 400) return "🚨 IMMEDIATE drone deployment — Severe pollution. Emergency suppression protocol.";
-  if (aqi > 300) return "⚠️ Urgent drone-based monitoring required. Dust/emission source identification needed.";
-  if (aqi > 200) return "🔶 Deploy monitoring drone. Recommend anti-smog gun activation in this ward.";
-  return "✅ Schedule routine drone inspection within 48h.";
+  if (aqi > 400) return "IMMEDIATE drone deployment — Severe pollution. Emergency suppression protocol.";
+  if (aqi > 300) return "Urgent drone-based monitoring required. Dust/emission source identification needed.";
+  if (aqi > 200) return "Deploy monitoring drone. Recommend anti-smog gun activation in this ward.";
+  return "Schedule routine drone inspection within 48h.";
+}
+
+/* ─── Map placeholder ─── */
+function MapPlaceholder() {
+  return (
+    <div
+      style={{
+        height: "380px", display: "flex", alignItems: "center",
+        justifyContent: "center", background: "#F4F6FA",
+        border: "1px solid #e2e8f0", borderRadius: "12px",
+        color: "#8A9BB0", fontSize: "13px",
+      }}
+    >
+      Loading map…
+    </div>
+  );
 }
 
 /* ─── Modal Component ─── */
@@ -112,19 +133,83 @@ function Modal({ open, title, onClose, children }: {
   );
 }
 
-/* ─── Main Dashboard ─── */
-export default function CommandCentre() {
+/* ─── Slim GRAP strip ─── */
+function GRAPStrip({ level }: { level: number }) {
+  const cfg: Record<number, { color: string; bg: string; border: string; text: string }> = {
+    1: { color: "#1E8449", bg: "rgba(30,132,73,0.07)", border: "rgba(30,132,73,0.25)", text: "Monitor AQI daily · Inform public · Activate control rooms" },
+    2: { color: "#1E5FA8", bg: "rgba(30,95,168,0.07)", border: "rgba(30,95,168,0.25)", text: "Increase monitoring frequency · Restrict construction · Advise sensitive groups" },
+    3: { color: "#C0392B", bg: "rgba(192,57,43,0.07)", border: "rgba(192,57,43,0.25)", text: "Ban diesel generators · Odd-even rationing · Crackdown on polluting vehicles" },
+    4: { color: "#5c0e0e", bg: "rgba(92,14,14,0.07)", border: "rgba(92,14,14,0.25)", text: "Immediate action on hotspots · Traffic restrictions · Industrial curbs" },
+  };
+  const c = cfg[level] ?? cfg[1];
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: "10px",
+        height: "36px", padding: "0 14px",
+        background: c.bg, border: `1px solid ${c.border}`,
+        borderLeft: `3px solid ${c.color}`,
+        borderRadius: "8px", flexShrink: 0,
+      }}
+    >
+      <span style={{ fontSize: "10px", fontWeight: 700, color: c.color, letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+        GRAP LEVEL {level} ACTIVE
+      </span>
+      <span style={{ width: "1px", height: "16px", background: c.border, flexShrink: 0 }} />
+      <span style={{ fontSize: "11px", color: c.color, opacity: 0.85, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {c.text}
+      </span>
+      <a
+        href="/alerts"
+        style={{ marginLeft: "auto", fontSize: "11px", color: c.color, fontWeight: 600, whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0 }}
+      >
+        Full detail →
+      </a>
+    </div>
+  );
+}
+
+/* ─── Compact Source Attribution bar ─── */
+function SourceBar({ source, stationCount }: { source: string; stationCount: number }) {
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: "12px", height: "30px",
+        padding: "0 12px", background: "#fff",
+        border: "1px solid #e2e8f0", borderRadius: "7px", flexShrink: 0,
+        fontSize: "11px", color: "#8A9BB0",
+      }}
+    >
+      <span className="live-dot" style={{ backgroundColor: source === "waqi" ? "#1E8449" : "#FFC000", margin: 0 }} />
+      <span style={{ fontWeight: 600, color: "#0D1B2A" }}>
+        {source === "waqi" ? "WAQI Live Feed" : "Mock Data"}
+      </span>
+      <span>·</span>
+      <span>{stationCount} monitoring stations</span>
+      <span>·</span>
+      <span>CPCB / DPCC certified data</span>
+    </div>
+  );
+}
+
+/* ─── Main Dashboard Content ─── */
+function CommandCentreContent() {
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get("demo") === "true";
   const [data, setData] = useState<AQIData | null>(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
-  const [lastUpdate, setLastUpdate] = useState("");
+  
+  // Animated states for demo mode
+  const [animCityAqi, setAnimCityAqi] = useState(0);
+  const [animPoorWards, setAnimPoorWards] = useState(0);
+  const [animAlerts, setAnimAlerts] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/aqi");
       const json: AQIData = await res.json();
       setData(json);
-      setLastUpdate(new Date().toLocaleTimeString("en-IN", { hour12: false }));
     } catch (e) {
       console.error("Dashboard AQI fetch error:", e);
     } finally {
@@ -145,16 +230,46 @@ export default function CommandCentre() {
     : 0;
   const poorWards = stations.filter(s => s.aqi > 200);
   const criticalAlerts = stations.filter(s => s.aqi > 300);
-  const sparklineData = stations.length
-    ? stations.map(s => s.aqi)
-    : [172, 178, 182, 185, 187, 189, 187];
   const grapLevel = cityAqi > 400 ? 4 : cityAqi > 300 ? 3 : cityAqi > 200 ? 2 : 1;
   const aqiCat = aqiCategory(cityAqi);
-  const isLive = data?.source === "waqi";
+
+  useEffect(() => {
+    if (loading || !isDemo) {
+      setAnimCityAqi(cityAqi);
+      setAnimPoorWards(poorWards.length);
+      setAnimAlerts(criticalAlerts.length);
+      return;
+    }
+
+    const duration = 1500;
+    const interval = 30;
+    const steps = duration / interval;
+    let currentStep = 0;
+
+    const timer = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / steps;
+      // easeOutQuart
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
+
+      setAnimCityAqi(Math.round(cityAqi * easeProgress));
+      setAnimPoorWards(Math.round(poorWards.length * easeProgress));
+      setAnimAlerts(Math.round(criticalAlerts.length * easeProgress));
+
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        setAnimCityAqi(cityAqi);
+        setAnimPoorWards(poorWards.length);
+        setAnimAlerts(criticalAlerts.length);
+      }
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [loading, isDemo, cityAqi, poorWards.length, criticalAlerts.length]);
 
   return (
     <>
-      {/* ─── Slide-up modal animation ─── */}
+      {/* ─── Global styles ─── */}
       <style>{`
         @keyframes slideUp {
           from { transform: translateY(100%); opacity: 0; }
@@ -166,219 +281,342 @@ export default function CommandCentre() {
         }
         .stat-box-clickable:hover {
           transform: translateY(-2px) scale(1.03);
-          box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.18);
         }
+        /* Teal scrollbar for alert col */
+        .alert-scroll::-webkit-scrollbar { width: 4px; }
+        .alert-scroll::-webkit-scrollbar-track { background: transparent; }
+        .alert-scroll::-webkit-scrollbar-thumb {
+          background: rgba(15,139,141,0.35);
+          border-radius: 4px;
+        }
+        .alert-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(15,139,141,0.65);
+        }
+        /* Hide map controls scrollbar bleed */
+        .map-fixed-wrap { overflow: hidden; border-radius: 12px; }
       `}</style>
 
+      {/* ─── Full-viewport wrapper — NO page scroll ─── */}
+      {/* Header=64px Footer=40px main-padding=32px total chrome=136px */}
       <div
         style={{
+          height: "calc(100vh - 136px)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
           backgroundImage: "radial-gradient(circle, #c8d6e8 1px, transparent 1px)",
           backgroundSize: "28px 28px",
           backgroundColor: "#F4F6FA",
-          minHeight: "100vh",
-          padding: "24px",
+          margin: "-16px",          /* cancel main's p-4 so we fill edge-to-edge */
+          padding: "12px 16px 10px",
+          boxSizing: "border-box",
+          gap: "10px",
         }}
       >
-        <div className="max-w-7xl mx-auto space-y-6">
-
-          {/* ── SECTION A: Hero Strip ── */}
+        {/* ── HERO STRIP ── */}
+        <div
+          className="rounded-2xl flex flex-col lg:flex-row lg:items-stretch justify-between"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 2px 12px rgba(13,27,42,0.07)",
+            overflow: "hidden",
+            flexShrink: 0,
+          }}
+        >
+          {/* Left Panel */}
           <div
-            className="rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-            style={{ background: "linear-gradient(135deg, #0D1B2A 0%, #1A3A5C 60%, #0F8B8D 100%)", minHeight: "140px" }}
+            className="flex flex-col justify-center"
+            style={{ padding: "14px 24px", borderRight: "1px solid #e2e8f0", flex: "0 0 auto" }}
           >
-            {/* Left */}
-            <div className="flex flex-col justify-center">
-              <div style={{ fontFamily: "monospace", fontSize: "10px", letterSpacing: "0.25em", color: "#C9A84C", textTransform: "uppercase", marginBottom: "10px" }}>
-                ⬡ AIRGRID OS &nbsp;·&nbsp; DELHI MUNICIPAL CORPORATION
-                &nbsp;
-                <span style={{ color: isLive ? "#00f5d4" : "#FFC000", fontSize: "9px" }}>
-                  ● {isLive ? "LIVE" : "MOCK"} · Updated {lastUpdate || "—"}
-                </span>
-              </div>
-              <h1 className="text-3xl font-bold text-white leading-tight">Air Quality Command Centre</h1>
-              <p style={{ color: "#94a3b8", fontSize: "14px", marginTop: "6px" }}>Ward-level hyperlocal pollution intelligence · Real-time</p>
-              <p style={{ color: "#64748b", fontSize: "12px", marginTop: "4px" }}>
-                {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-              </p>
+            {/* Eyebrow */}
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: "7px",
+                fontFamily: "monospace", fontSize: "10px", letterSpacing: "0.2em",
+                color: "#0F8B8D", textTransform: "uppercase", marginBottom: "6px",
+                fontWeight: 600,
+              }}
+            >
+              <svg width="7" height="7" viewBox="0 0 7 7" style={{ flexShrink: 0 }}>
+                <circle cx="3.5" cy="3.5" r="3.5" fill="#0F8B8D" />
+              </svg>
+              REAL-TIME · WARD-LEVEL · SOURCE-ATTRIBUTED
             </div>
 
-            {/* Right: stat boxes */}
-            <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap">
-              {/* City AQI */}
-              <div
-                className="stat-box-clickable rounded-xl px-6 py-4 text-center"
-                style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(4px)", border: "1px solid rgba(255,255,255,0.15)", minWidth: "110px" }}
-                onClick={() => setModal("cityAqi")}
-                title="Click to see AQI breakdown"
-              >
-                <div className="section-label" style={{ color: "#8A9BB0" }}>City AQI</div>
-                <div style={{ fontFamily: "monospace", fontSize: "2.5rem", fontWeight: 900, color: aqiColor(cityAqi), lineHeight: 1 }}>
-                  {loading ? "—" : cityAqi}
-                </div>
-                <div style={{ fontSize: "10px", color: aqiCat.color, fontWeight: 700, marginTop: "4px" }}>{aqiCat.label}</div>
-              </div>
+            {/* Heading */}
+            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0D1B2A", letterSpacing: "-0.01em", lineHeight: 1.2, margin: 0 }}>
+              Air Quality Command Centre
+            </h1>
 
-              {/* Poor+ Wards */}
-              <div
-                className="stat-box-clickable rounded-xl px-6 py-4 text-center"
-                style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(4px)", border: poorWards.length > 0 ? "1px solid rgba(192,57,43,0.4)" : "1px solid rgba(255,255,255,0.1)", minWidth: "110px" }}
-                onClick={() => setModal("poorWards")}
-                title="Click to see affected wards"
-              >
-                <div className="section-label" style={{ color: "#ff6b6b" }}>Poor+ Wards</div>
-                <div style={{ fontFamily: "monospace", fontSize: "2.5rem", fontWeight: 900, color: "#C0392B", lineHeight: 1 }}>
-                  {loading ? "—" : poorWards.length}
-                </div>
-                <div style={{ fontSize: "10px", color: "#8A9BB0", marginTop: "4px" }}>↗ tap for list</div>
-              </div>
+            {/* Subtext */}
+            <p style={{ fontSize: "12px", color: "#8A9BB0", marginTop: "2px", marginBottom: "10px", fontFamily: "var(--font-mono)" }}>
+              Live · {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
 
-              {/* Active Alerts */}
+            {/* Stat Pills */}
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <div
-                className="stat-box-clickable rounded-xl px-6 py-4 text-center"
-                style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(4px)", border: criticalAlerts.length > 0 ? "1px solid rgba(192,57,43,0.4)" : "1px solid rgba(255,255,255,0.1)", minWidth: "110px" }}
-                onClick={() => setModal("alerts")}
-                title="Click to see alerts"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  borderRadius: "9999px", border: "1px solid #e2e8f0",
+                  padding: "3px 10px", fontSize: "11px", color: "#0D1B2A",
+                  background: "#f8faff",
+                }}
               >
-                <div className="section-label" style={{ color: "#8A9BB0" }}>Active Alerts</div>
-                <div style={{ fontFamily: "monospace", fontSize: "2.5rem", fontWeight: 900, color: "#0F8B8D", lineHeight: 1 }}>
-                  {loading ? "—" : criticalAlerts.length}
-                </div>
-                <div style={{ fontSize: "10px", color: "#8A9BB0", marginTop: "4px" }}>↗ view alerts</div>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="6" cy="6" r="5" stroke="#0F8B8D" strokeWidth="1.5" />
+                  <circle cx="6" cy="6" r="2" fill="#0F8B8D" />
+                </svg>
+                <span style={{ fontWeight: 600 }}>272 Wards Monitored</span>
+              </div>
+              <div
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  borderRadius: "9999px", border: "1px solid #e2e8f0",
+                  padding: "3px 10px", fontSize: "11px", color: "#0D1B2A",
+                  background: "#f8faff",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                  <circle cx="6" cy="6" r="5" stroke="#0D1B2A" strokeWidth="1.5" />
+                  <path d="M6 3v3l2 1.5" stroke="#0D1B2A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{ fontWeight: 600 }}>Updated 3 min ago</span>
               </div>
             </div>
           </div>
 
-          {/* ── Alert banner for critical stations ── */}
-          {criticalAlerts.length > 0 && (
+          {/* Right KPI Boxes */}
+          <div style={{ display: "flex", flexDirection: "row", flex: 1, alignItems: "stretch" }}>
+            {/* Box 1: City AQI */}
             <div
-              className="rounded-xl px-5 py-3 flex items-center gap-3 cursor-pointer"
-              style={{ background: "rgba(192,57,43,0.08)", border: "1px solid rgba(192,57,43,0.3)", borderLeft: "4px solid #C0392B" }}
-              onClick={() => setModal("alerts")}
+              className="stat-box-clickable"
+              onClick={() => setModal("cityAqi")}
+              title="Click to see AQI breakdown"
+              style={{
+                flex: 1, padding: "14px 20px",
+                background: "#ffffff", borderLeft: `4px solid ${aqiColor(cityAqi)}`,
+                boxShadow: "0 2px 8px rgba(13,27,42,0.08)",
+                display: "flex", flexDirection: "column", justifyContent: "center",
+                cursor: "pointer", borderRight: "1px solid #e2e8f0",
+              }}
             >
-              <span className="live-dot" style={{ backgroundColor: "#C0392B", flexShrink: 0 }} />
-              <span style={{ fontSize: "13px", color: "#C0392B", fontWeight: 600 }}>
-                {criticalAlerts.length} station{criticalAlerts.length > 1 ? "s" : ""} with AQI &gt; 300 (Poor+). Immediate drone-based monitoring recommended.
-              </span>
-              <span style={{ marginLeft: "auto", fontSize: "11px", color: "#C0392B", opacity: 0.7, whiteSpace: "nowrap" }}>View details →</span>
-            </div>
-          )}
-
-          {/* ── SECTION B: 3-column grid ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Column 1 */}
-            <div className="space-y-6">
-              <div className="panel-card p-6 flex flex-col items-center" style={{ borderTop: "3px solid var(--accent-teal)" }}>
-                <div className="w-full text-left mb-4">
-                  <div className="section-label">Real-time Snapshot</div>
-                  <h2 className="text-xl font-semibold text-navy">Current AQI Situation</h2>
-                </div>
-                <AQIGauge value={loading ? 0 : cityAqi} size={200} />
+              <div className="section-label" style={{ marginBottom: "2px" }}>CITY AQI</div>
+              <div style={{ fontFamily: "monospace", fontSize: "38px", fontWeight: 900, color: aqiColor(cityAqi), lineHeight: 1 }}>
+                {loading ? "—" : animCityAqi}
               </div>
-              <LiveFlightCounter />
-              <WeatherCard />
-              <EmissionTodayCard />
+              <div style={{ fontSize: "10px", fontWeight: 700, color: aqiColor(cityAqi), marginTop: "3px", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                {aqiCat.label.toUpperCase()}
+              </div>
             </div>
 
-            {/* Column 2+3 */}
-            <div className="space-y-6 lg:col-span-2">
-              <GRAPBanner level={grapLevel} />
-
-              {/* Inline alerts strip from real data */}
-              <div className="panel-card p-4" style={{ borderTop: "3px solid var(--critical-red)" }}>
-                <div className="section-label" style={{ color: "#C0392B" }}>Real-Time Notifications</div>
-                <h2 className="text-lg font-semibold mb-3 text-navy">Station Alerts</h2>
-                {stations.length === 0 ? (
-                  <div style={{ color: "#8A9BB0", fontSize: "13px" }}>Fetching live data...</div>
-                ) : (
-                  <div className="space-y-2">
-                    {stations
-                      .filter(s => s.aqi > 200)
-                      .sort((a, b) => b.aqi - a.aqi)
-                      .slice(0, 4)
-                      .map(s => (
-                        <div
-                          key={s.id}
-                          className="flex items-center gap-3 px-4 py-2 rounded"
-                          style={{
-                            borderLeft: `4px solid ${aqiColor(s.aqi)}`,
-                            background: `${aqiColor(s.aqi)}10`,
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setModal("poorWards")}
-                        >
-                          <span className="live-dot" style={{ backgroundColor: aqiColor(s.aqi), flexShrink: 0 }} />
-                          <span style={{ fontWeight: 600, color: "#0D1B2A", fontSize: "13px" }}>{s.name}</span>
-                          <span style={{ color: "#8A9BB0", fontSize: "12px" }}>|</span>
-                          <span style={{ fontSize: "12px", color: aqiColor(s.aqi), fontWeight: 700, fontFamily: "monospace" }}>AQI {s.aqi}</span>
-                          {s.pm25 && <span style={{ fontSize: "11px", color: "#8A9BB0" }}>· PM2.5: {s.pm25}µg/m³</span>}
-                          <span style={{ marginLeft: "auto", fontSize: "10px", color: aqiColor(s.aqi) }}>{aqiCategory(s.aqi).label}</span>
-                        </div>
-                      ))}
-                    {stations.filter(s => s.aqi > 200).length === 0 && (
-                      <div style={{ color: "#1E8449", fontWeight: 600, fontSize: "13px" }}>✓ All stations within acceptable range</div>
-                    )}
-                  </div>
-                )}
+            {/* Box 2: Wards in Poor+ */}
+            <div
+              className="stat-box-clickable"
+              onClick={() => setModal("poorWards")}
+              title="Click to see affected wards"
+              style={{
+                flex: 1, padding: "14px 20px",
+                background: "#ffffff", borderLeft: "4px solid #C0392B",
+                boxShadow: "0 2px 8px rgba(13,27,42,0.08)",
+                display: "flex", flexDirection: "column", justifyContent: "center",
+                cursor: "pointer", borderRight: "1px solid #e2e8f0",
+              }}
+            >
+              <div className="section-label" style={{ marginBottom: "2px" }}>WARDS IN POOR+</div>
+              <div style={{ fontFamily: "monospace", fontSize: "38px", fontWeight: 900, color: "#C0392B", lineHeight: 1 }}>
+                {loading ? "—" : animPoorWards}
               </div>
-
-              {/* Sparkline + DataFreshness */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="panel-card p-6" style={{ borderTop: "3px solid var(--accent-teal)" }}>
-                  <div className="section-label">Station AQI Overview</div>
-                  <h2 className="text-lg font-semibold text-navy mb-4">Live AQI · All Stations</h2>
-                  <AQITrendSparkline data={sparklineData} />
-                </div>
-                <div className="panel-card p-6" style={{ borderTop: "3px solid var(--gov-gold)" }}>
-                  <DataFreshness />
-                </div>
+              <div style={{ fontSize: "10px", color: "#8A9BB0", marginTop: "3px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                above AQI 200
               </div>
+            </div>
 
-              {/* Worst wards table — live from API */}
-              <div className="panel-card p-6" style={{ borderTop: "3px solid var(--accent-teal)" }}>
-                <div className="section-label">Critical Zones</div>
-                <h2 className="text-xl font-semibold mb-4 text-navy">All Monitoring Stations</h2>
-                {loading ? (
-                  <div style={{ color: "#8A9BB0", padding: "16px", textAlign: "center" }}>Loading station data...</div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ background: "linear-gradient(90deg, #0D1B2A, #1A3A5C)", color: "white" }}>
-                        <th className="text-left py-2 px-3 font-semibold rounded-tl-md">Station</th>
-                        <th className="text-right py-2 px-3 font-semibold">AQI</th>
-                        <th className="text-right py-2 px-3 font-semibold">PM2.5</th>
-                        <th className="text-right py-2 px-3 font-semibold">NO₂</th>
-                        <th className="text-right py-2 px-3 font-semibold rounded-tr-md">Status</th>
+            {/* Box 3: Active Alerts */}
+            <div
+              className="stat-box-clickable"
+              onClick={() => setModal("alerts")}
+              title="Click to see alerts"
+              style={{
+                flex: 1, padding: "14px 20px",
+                background: "#ffffff", borderLeft: "4px solid #0F8B8D",
+                boxShadow: "0 2px 8px rgba(13,27,42,0.08)",
+                display: "flex", flexDirection: "column", justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <div className="section-label" style={{ marginBottom: "2px" }}>ACTIVE ALERTS</div>
+              <div style={{ fontFamily: "monospace", fontSize: "38px", fontWeight: 900, color: "#0F8B8D", lineHeight: 1 }}>
+                {loading ? "—" : animAlerts}
+              </div>
+              <div style={{ fontSize: "10px", color: "#8A9BB0", marginTop: "3px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                require action
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 3-COLUMN BODY GRID — fills remaining viewport height ── */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 2fr 1.2fr",
+            gap: "12px",
+            flex: 1,
+            minHeight: 0, /* critical: lets grid shrink inside flex column */
+          }}
+        >
+          {/* ════ COL 1 — AQI Gauge + Worst Wards ════ */}
+          <div
+            style={{
+              display: "flex", flexDirection: "column", gap: "10px",
+              minHeight: 0, overflow: "hidden",
+            }}
+          >
+            {/* AQI Gauge card */}
+            <div
+              className="panel-card"
+              style={{
+                borderTop: "3px solid var(--accent-teal)",
+                padding: "14px 16px",
+                display: "flex", flexDirection: "column", alignItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <div className="w-full text-left mb-2">
+                <div className="section-label">CURRENT STATUS</div>
+              </div>
+              <AQIGauge value={loading ? 0 : cityAqi} size={160} />
+            </div>
+
+            {/* Worst 5 Wards — fills remaining col height */}
+            <div
+              className="panel-card"
+              style={{
+                borderTop: "3px solid var(--accent-teal)",
+                padding: "14px 16px",
+                flex: 1, minHeight: 0,
+                display: "flex", flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              <div className="section-label">Critical Zones</div>
+              <h2 style={{ fontSize: "14px", fontWeight: 700, color: "#0D1B2A", margin: "0 0 10px" }}>
+                Worst 5 Wards
+              </h2>
+              <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "linear-gradient(90deg, #0D1B2A, #1A3A5C)", color: "white" }}>
+                      <th className="text-left py-1.5 px-2 font-semibold rounded-tl-md" style={{ fontSize: "11px" }}>Ward</th>
+                      <th className="text-right py-1.5 px-2 font-semibold" style={{ fontSize: "11px" }}>AQI</th>
+                      <th className="text-right py-1.5 px-2 font-semibold rounded-tr-md" style={{ fontSize: "11px" }}>PM2.5</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={3} style={{ textAlign: "center", padding: "20px", color: "#8A9BB0", fontSize: "12px" }}>
+                          Loading…
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {[...stations].sort((a, b) => b.aqi - a.aqi).map((s, i) => {
-                        const cat = aqiCategory(s.aqi);
-                        return (
+                    ) : (
+                      [...stations]
+                        .sort((a, b) => b.aqi - a.aqi)
+                        .slice(0, 5)
+                        .map((s, i) => (
                           <tr
                             key={s.id}
                             className={i % 2 === 0 ? "bg-white" : "bg-[#f8faff]"}
-                            style={{ borderBottom: "1px solid #F1F5F9", borderLeft: i === 0 ? "4px solid #C0392B" : "4px solid transparent", cursor: "pointer" }}
+                            style={{
+                              borderBottom: "1px solid #F1F5F9",
+                              borderLeft: i === 0 ? "3px solid #C0392B" : "3px solid transparent",
+                              cursor: "pointer",
+                            }}
                             onClick={() => setModal("poorWards")}
                           >
-                            <td className="py-2 px-3 font-medium" style={{ color: "#0D1B2A" }}>{s.name}</td>
-                            <td className="py-2 px-3 text-right">
-                              <span style={{ fontFamily: "monospace", fontWeight: 700, color: aqiColor(s.aqi), background: `${aqiColor(s.aqi)}18`, borderRadius: "20px", padding: "2px 10px" }}>
+                            <td className="py-1.5 px-2 font-medium" style={{ color: "#0D1B2A", fontSize: "12px" }}>{s.name}</td>
+                            <td className="py-1.5 px-2 text-right">
+                              <span style={{
+                                fontFamily: "monospace", fontWeight: 700, fontSize: "12px",
+                                color: aqiColor(s.aqi), background: `${aqiColor(s.aqi)}18`,
+                                borderRadius: "20px", padding: "1px 8px",
+                              }}>
                                 {s.aqi}
                               </span>
                             </td>
-                            <td className="py-2 px-3 text-right font-mono" style={{ color: "#1C2B3A" }}>{s.pm25 ?? "—"}</td>
-                            <td className="py-2 px-3 text-right font-mono" style={{ color: "#1C2B3A" }}>{s.no2 ?? "—"}</td>
-                            <td className="py-2 px-3 text-right">
-                              <span style={{ fontSize: "11px", fontWeight: 700, color: cat.color }}>{cat.label}</span>
-                            </td>
+                            <td className="py-1.5 px-2 text-right font-mono" style={{ color: "#1C2B3A", fontSize: "12px" }}>{s.pm25 ?? "—"}</td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
+                        ))
+                    )}
+                  </tbody>
+                </table>
               </div>
+              <a
+                href="/wards"
+                style={{
+                  display: "block", marginTop: "10px", textAlign: "right",
+                  fontSize: "11px", color: "#0F8B8D", fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                View all 272 wards →
+              </a>
             </div>
+          </div>
+
+          {/* ════ COL 2 — GRAP strip + Map + Source bar ════ */}
+          <div
+            style={{
+              display: "flex", flexDirection: "column", gap: "10px",
+              minHeight: 0, overflow: "hidden",
+            }}
+          >
+            {/* Slim GRAP strip */}
+            <GRAPStrip level={grapLevel} />
+
+            {/* Pollution Map — fixed 380px, no overflow */}
+            <div
+              className="map-fixed-wrap"
+              style={{
+                height: "380px", flexShrink: 0,
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px", overflow: "hidden",
+              }}
+            >
+              <PollutionMap />
+            </div>
+
+            {/* Source attribution compact bar */}
+            <SourceBar source={data?.source ?? ""} stationCount={stations.length} />
+
+            {/* DataFreshness fills the rest */}
+            <div
+              className="panel-card"
+              style={{
+                borderTop: "3px solid var(--gov-gold)",
+                padding: "12px 16px",
+                flex: 1, minHeight: 0, overflow: "auto",
+              }}
+            >
+              <DataFreshness />
+            </div>
+          </div>
+
+          {/* ════ COL 3 — Alert Strip (scrollable) ════ */}
+          <div
+            className="alert-scroll"
+            style={{
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0",
+              minHeight: 0,
+            }}
+          >
+            <AlertCommandStrip />
           </div>
         </div>
       </div>
@@ -390,7 +628,7 @@ export default function CommandCentre() {
             <div style={{ background: "#F4F6FA", borderRadius: "12px", padding: "16px 24px", textAlign: "center", flex: 1 }}>
               <div className="section-label">City Average AQI</div>
               <div style={{ fontFamily: "monospace", fontSize: "3rem", fontWeight: 900, color: aqiColor(cityAqi), lineHeight: 1 }}>{cityAqi}</div>
-              <div style={{ fontSize: "13px", color: aqiCat.color, fontWeight: 700, marginTop: "6px" }}>{aqiCat.label}</div>
+              <div style={{ fontSize: "13px", color: aqiCategory(cityAqi).color, fontWeight: 700, marginTop: "6px" }}>{aqiCategory(cityAqi).label}</div>
             </div>
           </div>
           {stations.map(s => {
@@ -424,12 +662,9 @@ export default function CommandCentre() {
           </div>
         ) : (
           <>
-            <div style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.2)", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-              <span style={{ fontSize: "20px" }}>🚁</span>
-              <div>
-                <div style={{ fontWeight: 700, color: "#C0392B", fontSize: "14px" }}>Drone-Based Monitoring Protocol Active</div>
-                <div style={{ fontSize: "12px", color: "#8A9BB0", marginTop: "2px" }}>Following wards require immediate aerial surveillance and anti-smog intervention per DPCC guidelines.</div>
-              </div>
+            <div style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.2)", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px" }}>
+              <div style={{ fontWeight: 700, color: "#C0392B", fontSize: "14px" }}>Drone-Based Monitoring Protocol Active</div>
+              <div style={{ fontSize: "12px", color: "#8A9BB0", marginTop: "2px" }}>Following wards require immediate aerial surveillance and anti-smog intervention per DPCC guidelines.</div>
             </div>
             <div className="space-y-4">
               {[...poorWards].sort((a, b) => b.aqi - a.aqi).map((s, i) => {
@@ -453,8 +688,7 @@ export default function CommandCentre() {
                         <div style={{ fontSize: "11px", fontWeight: 700, color: cat.color }}>{cat.label}</div>
                       </div>
                     </div>
-                    <div style={{ padding: "12px 16px", background: "#F8FAFF", borderTop: "1px solid #EEF2F7", display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                      <span>🚁</span>
+                    <div style={{ padding: "12px 16px", background: "#F8FAFF", borderTop: "1px solid #EEF2F7" }}>
                       <div style={{ fontSize: "13px", color: "#1C2B3A", lineHeight: 1.5 }}>
                         <strong>Action Required:</strong> {droneAction(s.aqi)}
                       </div>
@@ -464,7 +698,7 @@ export default function CommandCentre() {
               })}
             </div>
             <div style={{ marginTop: "20px", padding: "12px 16px", background: "#F0F9FF", borderRadius: "10px", border: "1px solid #BAE6FD", fontSize: "12px", color: "#0D1B2A" }}>
-              📋 <strong>DPCC Directive:</strong> All wards with AQI &gt; 300 require mandatory drone patrol under Delhi Pollution Control Committee circular no. DPCC/Drone/2024/118. Report generated at {new Date().toLocaleTimeString("en-IN")}.
+              <strong>DPCC Directive:</strong> All wards with AQI &gt; 300 require mandatory drone patrol under Delhi Pollution Control Committee circular no. DPCC/Drone/2024/118. Report generated at {new Date().toLocaleTimeString("en-IN")}.
             </div>
           </>
         )}
@@ -500,17 +734,25 @@ export default function CommandCentre() {
                     </div>
                   </div>
                   <div style={{ padding: "10px 16px", fontSize: "13px", color: "#1C2B3A", borderTop: `1px solid ${cat.color}20`, background: "#FAFBFC" }}>
-                    🚁 <strong>Recommended Action:</strong> {droneAction(s.aqi)}
+                    <strong>Recommended Action:</strong> {droneAction(s.aqi)}
                   </div>
                 </div>
               );
             })}
             <div style={{ padding: "12px 16px", background: "#FFF7ED", borderRadius: "10px", border: "1px solid #FED7AA", fontSize: "12px", color: "#9A3412" }}>
-              ⚠️ These alerts are auto-generated based on CPCB National AQI standards. Threshold for "Poor": AQI &gt; 300. Drone deployment authority: Ward Environmental Officer.
+              These alerts are auto-generated based on CPCB National AQI standards. Threshold for Poor: AQI &gt; 300. Drone deployment authority: Ward Environmental Officer.
             </div>
           </div>
         )}
       </Modal>
     </>
+  );
+}
+
+export default function CommandCentre() {
+  return (
+    <Suspense fallback={<MapPlaceholder />}>
+      <CommandCentreContent />
+    </Suspense>
   );
 }

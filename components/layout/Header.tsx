@@ -20,12 +20,21 @@ export const Header: React.FC = () => {
   return (
     <header className="h-16 text-white flex items-center justify-between px-6 shadow-md" style={{ background: 'linear-gradient(90deg, #0D1B2A 0%, #1A3A5C 100%)', borderBottom: '2px solid #C9A84C' }}>
       <div className="flex items-center space-x-4">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00f5d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <polygon points="14,2 25,8 25,20 14,26 3,20 3,8"
+            stroke="#0F8B8D" strokeWidth="1.5" fill="rgba(15,139,141,0.15)"/>
+          <polygon points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5"
+            stroke="#C9A84C" strokeWidth="1" fill="none" opacity="0.6"/>
         </svg>
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">AIRGRID OS</span>
-          <span className="text-[10px] tracking-[0.2em] opacity-60">DELHI MUNICIPAL CORPORATION</span>
+        <div className="flex flex-col leading-tight">
+          <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, 
+            fontSize:'16px', color:'#ffffff', letterSpacing:'0.1em' }}>
+            AIRGRID OS
+          </span>
+          <span style={{ fontSize:'9px', color:'rgba(255,255,255,0.45)', 
+            letterSpacing:'0.15em', textTransform:'uppercase' }}>
+            Delhi Municipal Corporation
+          </span>
         </div>
       </div>
       <div className="flex items-center space-x-6">
@@ -38,12 +47,14 @@ export const Header: React.FC = () => {
             </span>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1.5 mr-4">
           <span className="live-dot" />
-          <span className="text-[10px] text-green-400 font-mono tracking-widest">SYSTEM LIVE</span>
+          <span style={{ fontSize:'10px', fontFamily:'var(--font-mono)',
+            color:'rgba(255,255,255,0.5)', letterSpacing:'0.12em' }}>
+            SYSTEM LIVE
+          </span>
         </div>
-        <span className="font-mono text-base font-medium px-2 py-1 bg-white/10 rounded">{time}</span>
-        <span className="text-sm">Officer</span>
+        <span style={{ fontFamily:'var(--font-mono)', fontSize:'13px' }}>{time}</span>
       </div>
     </header>
   );

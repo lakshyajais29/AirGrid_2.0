@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Plane } from "lucide-react";
 import type { ReportPeriod } from "./ReportBuilderForm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -126,7 +127,7 @@ const PageHeader = ({ small }: { small?: boolean }) => (
           fontSize: "14px",
         }}
       >
-        ✈
+        <Plane size={16} color="white" />
       </div>
       <div style={{ color: "white", fontWeight: 700, fontSize: "13px", letterSpacing: "0.06em" }}>
         AIRGRID OS
@@ -166,7 +167,7 @@ const PageFooter = ({ page, reportId }: { page: number; reportId: string }) => (
       fontFamily: "monospace",
     }}
   >
-    <span>AirGrid OS v2.0 · Automated Intelligence Platform</span>
+    <span>AirGrid OS v2.0 · Air Quality Monitoring System</span>
     <span>{reportId}</span>
     <span>Page {page} of 6</span>
   </div>
@@ -443,7 +444,7 @@ export function ReportDocument({ period, reportId }: Props) {
           }}
         >
           <div style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", color: "#0F8B8D", marginBottom: "10px" }}>
-            Automated Intelligence Summary
+            Automated Data Summary
           </div>
           <p style={{ fontSize: "12px", lineHeight: 1.8, color: "#2D3748", margin: 0, textAlign: "justify" }}>
             On <strong>{dateStr}</strong>, Delhi's air quality remained in the <strong>MODERATE-POOR</strong> category
@@ -790,7 +791,7 @@ export function ReportDocument({ period, reportId }: Props) {
             {tomorrowStr} at 06:00 IST
             <br />
             <strong style={{ color: "#0D1B2A" }}>Platform:</strong>{" "}
-            AirGrid OS v2.0 · Automated Intelligence Platform · Delhi Municipal Corporation
+            AirGrid OS v2.0 · Air Quality Monitoring System · Delhi Municipal Corporation
           </div>
         </div>
 

@@ -8,6 +8,7 @@ import React, {
   useMemo,
 } from "react"
 import dynamic from "next/dynamic"
+import { Plane, Navigation, MapPin } from "lucide-react"
 import "leaflet/dist/leaflet.css"
 
 // ─── Dynamic Leaflet imports (SSR-safe) ──────────────────────────────────────
@@ -337,7 +338,7 @@ function MapControls({ waypoints, pollutant, focusIndex }: MapControlsProps) {
       options: { position: "topleft" },
       onAdd() {
         const div = L.DomUtil.create("div")
-        div.innerHTML = `✈ FLIGHT CORRIDOR · ${count} WAYPOINTS`
+        div.innerHTML = `FLIGHT CORRIDOR · ${count} WAYPOINTS`
         div.style.cssText = [
           "background:rgba(13,27,42,0.88)", "color:white", "font-family:monospace",
           "padding:7px 14px", "border-radius:8px", "border:1px solid rgba(15,139,141,0.5)",
@@ -425,7 +426,7 @@ function MapControls({ waypoints, pollutant, focusIndex }: MapControlsProps) {
               <div style={{ fontFamily: "var(--font-sans, sans-serif)", minWidth: "200px", padding: "4px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                   <div style={{ fontWeight: 700, fontSize: "14px", color: "#0D1B2A" }}>
-                    {isStart ? "✈ DEPARTURE — " : isEnd ? "🛬 ARRIVAL — " : "📍 "}{wp.waypoint_name.replace(/_/g, " ")}
+                    {isStart ? "DEPARTURE — " : isEnd ? "ARRIVAL — " : "WP — "}{wp.waypoint_name.replace(/_/g, " ")}
                   </div>
                 </div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: aqiBg(wp.aqi), border: `1px solid ${aqiColor(wp.aqi)}40`, borderRadius: "8px", padding: "4px 10px", marginBottom: "10px" }}>
@@ -836,7 +837,7 @@ export const LiveFlightMonitor: React.FC = () => {
       {/* ── Tab bar ── */}
       <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid #E2E8F0", marginBottom: "20px" }}>
         <button style={tabBtn("flight")} onClick={() => setActiveTab("flight")}>
-          ✈ Flight Corridor
+          <Plane size={16} /> Flight Corridor
         </button>
         <button style={tabBtn("drone")} onClick={() => setActiveTab("drone")}>
           🛸 Drone CSV Log
@@ -854,7 +855,7 @@ export const LiveFlightMonitor: React.FC = () => {
               <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#0D1B2A", margin: 0 }}>Flight Path Air Quality</h2>
               {fileName && (
                 <div style={{ fontSize: "13px", color: "#0F8B8D", fontFamily: "monospace", marginTop: "4px", fontWeight: 600 }}>
-                  ✈ {fileName} · {waypoints.length} waypoints loaded
+                  <Plane size={14} className="inline mr-1" /> {fileName} · {waypoints.length} waypoints loaded
                 </div>
               )}
             </div>
@@ -870,7 +871,7 @@ export const LiveFlightMonitor: React.FC = () => {
                 onDrop={handleFlightDrop}
                 style={{ border: `2px dashed ${isDragging ? "#0F8B8D" : "#CBD5E0"}`, borderRadius: "12px", padding: "28px 16px", textAlign: "center", cursor: "pointer", background: isDragging ? "rgba(15,139,141,0.05)" : "rgba(244,246,250,0.7)", transition: "all 0.2s ease" }}
               >
-                <div style={{ fontSize: "32px", marginBottom: "8px" }}>✈</div>
+                <div style={{ marginBottom: "8px" }}><Plane size={32} /></div>
                 <div style={{ fontWeight: 600, color: "#1C2B3A", fontSize: "14px", marginBottom: "4px" }}>Drop flight CSV here or click to browse</div>
                 <div style={{ fontSize: "12px", color: "#8A9BB0", marginBottom: "12px" }}>Columns: lat, lon, altitude_ft, aqi, temperature_c, pm25, pm10, no₂, co, timestamp, waypoint_name</div>
                 <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) processFlightFile(f) }} />
@@ -964,7 +965,7 @@ export const LiveFlightMonitor: React.FC = () => {
               )}
               {waypoints.length === 0 && (
                 <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", background: "rgba(13,27,42,0.82)", color: "white", borderRadius: "10px", padding: "10px 20px", fontSize: "13px", fontWeight: 600, border: "1px solid rgba(15,139,141,0.4)", pointerEvents: "none", whiteSpace: "nowrap", zIndex: 1000 }}>
-                  ✈ Upload a CSV to visualise the flight path
+                  <Plane size={14} className="inline mr-1" /> Upload a CSV to visualise the flight path
                 </div>
               )}
             </div>

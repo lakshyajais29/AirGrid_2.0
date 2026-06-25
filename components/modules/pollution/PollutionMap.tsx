@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   MapContainer,
   TileLayer,
@@ -168,7 +169,7 @@ function MapBrandBadge() {
         options: { position: "topleft" },
         onAdd: function () {
           const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
-          div.innerHTML = "⬡ AIRGRID OS";
+          div.innerHTML = "AIRGRID OS";
           div.style.background = "rgba(13,27,42,0.85)";
           div.style.color = "white";
           div.style.fontFamily = "monospace";
@@ -218,7 +219,7 @@ function StatusOverlayBadge({ source }: { source: string }) {
         options: { position: "topright" },
         onAdd: function () {
           const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
-          div.innerHTML = source === "waqi" ? "● WAQI Live" : "● Mock Data";
+          div.innerHTML = source === "waqi" ? "<span class='live-dot'></span> WAQI Live" : "<span class='live-dot'></span> Mock Data";
           div.style.background = "rgba(13,27,42,0.85)";
           div.style.color = source === "waqi" ? "var(--safe-green)" : "var(--gov-gold)";
           div.style.fontFamily = "monospace";
@@ -250,6 +251,8 @@ function StatusOverlayBadge({ source }: { source: string }) {
 
 /* ── Main Component ── */
 export default function PollutionMap() {
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get("demo") === "true";
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<string>("");
@@ -468,7 +471,7 @@ export default function PollutionMap() {
         {/* Right side: status */}
         <div className="ml-auto flex items-center gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
           <span className="font-mono">
-            {source === "waqi" ? "● WAQI Live" : "● Mock Data"}
+            {source === "waqi" ? <><span className="live-dot" /> WAQI Live</> : <><span className="live-dot" /> Mock Data</>}
           </span>
           <span className="font-mono">
             Refreshing in {countdown}s
@@ -486,13 +489,13 @@ export default function PollutionMap() {
       >
         <MapContainer
           center={[28.6139, 77.2090]}
-          zoom={11}
+          zoom={isDemo ? 12 : 11}
           scrollWheelZoom={true}
           style={{ height: "100%", width: "100%" }}
           className="z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
 

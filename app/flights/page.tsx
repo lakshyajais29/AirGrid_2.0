@@ -30,10 +30,10 @@ export default function FlightsPage() {
           borderRadius: "16px", padding: "20px 28px", marginBottom: "24px",
         }}>
           <div style={{ fontFamily: "monospace", fontSize: "10px", letterSpacing: "0.25em", color: "#C9A84C", marginBottom: "6px" }}>
-            ⬡ AIRGRID OS · FLIGHT CORRIDOR MONITOR
+            AIRGRID OS · FLIGHT CORRIDOR MONITOR
           </div>
           <h1 style={{ color: "white", fontSize: "24px", fontWeight: 700, margin: 0 }}>
-            Flight Corridor Intelligence
+            Flight Corridor Monitor
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "4px", margin: 0 }}>
             Live route tracking · Altitude monitoring · CSV import · IGI Airport coverage

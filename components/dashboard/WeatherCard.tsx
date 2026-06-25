@@ -33,7 +33,7 @@ export const WeatherCard: React.FC = () => {
   if (loading || !weather) {
     return (
       <div className="bg-navy/90 border border-accent-teal/30 p-6 rounded-xl flex items-center justify-center h-48 animate-pulse shadow-card">
-        <span className="text-accent-teal font-mono text-sm">LOADING ATMOSPHERICS...</span>
+        <span className="text-accent-teal font-mono text-sm">Fetching weather data...</span>
       </div>
     );
   }
@@ -48,7 +48,7 @@ export const WeatherCard: React.FC = () => {
       </div>
 
       <div className="flex justify-between items-center mb-4 relative z-10">
-        <div className="section-label !text-accent-teal !mb-0 !text-[9px]">Atmospheric Conditions</div>
+        <div className="section-label !text-accent-teal !mb-0 !text-[9px]">Weather Conditions</div>
         <div className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${weather.isLive ? 'bg-safe-green/20 text-safe-green border border-safe-green/30' : 'bg-gov-gold/20 text-gov-gold border border-gov-gold/30'}`}>
           {weather.isLive ? "LIVE" : "MOCK"}
         </div>
