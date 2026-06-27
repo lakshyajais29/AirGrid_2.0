@@ -1,770 +1,381 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { AlertTriangle, Info, CheckCircle, Circle } from "lucide-react";
+import { AlertTriangle, Info, CheckCircle, Download, MapPin } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Severity = "critical" | "warning" | "info";
-type FilterType = "all" | Severity | "acknowledged";
+type Severity     = "critical" | "warning" | "info";
+type SourceType   = "Construction Dust" | "Open Burning" | "Vehicular" | "Industrial" | "Road Dust" | "DG Set";
 
 interface Alert {
-  id: number;
-  ward: string;
-  pollutant: string;
-  value: number;
-  threshold: number;
-  time: string;        // "HH:MM"
-  severity: Severity;
-  title: string;
-  isNew?: boolean;     // for slide-in animation
+  id:         number;
+  ward:       string;
+  pollutant:  string;
+  value:      number;
+  threshold:  number;
+  time:       string;
+  severity:   Severity;
+  title:      string;
+  source:     SourceType;
+  confidence: number;  // AI confidence 0-100
+  lat:        number;
+  lng:        number;
 }
 
 interface AlertState extends Alert {
-  acknowledged: boolean;
+  acknowledged:   boolean;
   acknowledgedAt?: string;
-  assignedTeam?: string;
+  assignedDept?:  string;
 }
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const INITIAL_ALERTS: Alert[] = [
-  { id: 1,  ward: "Mahipalpur",   pollutant: "PM2.5", value: 245, threshold: 200, time: "14:30", severity: "critical", title: "PM2.5 spike — 245 µg/m³" },
-  { id: 2,  ward: "Vasant Kunj",  pollutant: "NO₂",   value: 189, threshold: 180, time: "15:15", severity: "warning",  title: "NO₂ above limit — 189 ppb" },
-  { id: 3,  ward: "Dwarka",       pollutant: "PM10",  value: 320, threshold: 250, time: "13:50", severity: "critical", title: "PM10 hazardous — 320 µg/m³" },
-  { id: 4,  ward: "Rohini",       pollutant: "CO",    value: 4.2, threshold: 4.0, time: "16:00", severity: "warning",  title: "CO elevated — 4.2 mg/m³" },
-  { id: 5,  ward: "Lajpat Nagar", pollutant: "SO₂",   value: 22,  threshold: 20,  time: "12:45", severity: "info",     title: "SO₂ above baseline — 22 ppb" },
-  { id: 6,  ward: "Saket",        pollutant: "AQI",   value: 410, threshold: 400, time: "11:30", severity: "critical", title: "AQI Severe — 410" },
-  { id: 7,  ward: "Okhla",        pollutant: "PM2.5", value: 178, threshold: 160, time: "10:20", severity: "warning",  title: "PM2.5 rising — 178 µg/m³" },
+  { id: 1, ward: "Mahipalpur",   pollutant: "PM2.5", value: 245, threshold: 200, time: "14:30", severity: "critical", title: "PM2.5 Spike Detected",      source: "Construction Dust", confidence: 92, lat: 28.5082, lng: 77.1247 },
+  { id: 2, ward: "Vasant Kunj",  pollutant: "NO₂",   value: 189, threshold: 180, time: "15:15", severity: "warning",  title: "NO₂ Above Limit",           source: "Vehicular",         confidence: 85, lat: 28.5214, lng: 77.1576 },
+  { id: 3, ward: "Dwarka",       pollutant: "PM10",  value: 320, threshold: 250, time: "13:50", severity: "critical", title: "PM10 Hazardous Level",       source: "Road Dust",         confidence: 88, lat: 28.5921, lng: 77.0460 },
+  { id: 4, ward: "Rohini",       pollutant: "CO",    value: 4.2, threshold: 4.0, time: "16:00", severity: "warning",  title: "CO Elevated",               source: "DG Set",            confidence: 76, lat: 28.7495, lng: 77.1122 },
+  { id: 5, ward: "Lajpat Nagar", pollutant: "SO₂",   value: 22,  threshold: 20,  time: "12:45", severity: "info",     title: "SO₂ Above Baseline",        source: "Industrial",        confidence: 71, lat: 28.5672, lng: 77.2433 },
+  { id: 6, ward: "Saket",        pollutant: "AQI",   value: 410, threshold: 400, time: "11:30", severity: "critical", title: "AQI Severe — Emergency",    source: "Open Burning",      confidence: 95, lat: 28.5244, lng: 77.2090 },
+  { id: 7, ward: "Okhla",        pollutant: "PM2.5", value: 178, threshold: 160, time: "10:20", severity: "warning",  title: "PM2.5 Rising Trend",        source: "Industrial",        confidence: 81, lat: 28.5329, lng: 77.2811 },
 ];
 
-const TEAMS = [
-  "Field Inspection Team",
-  "Road Watering Unit",
-  "Construction Enforcement",
-  "Emergency Response",
-];
+/* Departments keyed by source category */
+const SOURCE_DEPTS: Record<SourceType, string[]> = {
+  "Construction Dust": ["MCD Enforcement",     "DPCC Site Inspection", "ICCC"],
+  "Open Burning":      ["Fire Services",        "MCD Anti-Burning Cell", "Police"],
+  "Vehicular":         ["Traffic Police",       "MCD Transport Dept",    "DPCC"],
+  "Industrial":        ["DPCC Industry Cell",   "CAQM",                  "ICCC"],
+  "Road Dust":         ["MCD Road Watering",    "DPCC Field Team",       "ICCC"],
+  "DG Set":            ["DPCC DG Task Force",   "MCD",                   "Police"],
+};
+
+const SOURCE_STYLE: Record<SourceType, { bg: string; text: string }> = {
+  "Construction Dust": { bg: "#FEF9C3", text: "#854D0E" },
+  "Open Burning":      { bg: "#FEF2F2", text: "#991B1B" },
+  "Vehicular":         { bg: "#EFF6FF", text: "#1D4ED8" },
+  "Industrial":        { bg: "#FDF4FF", text: "#6B21A8" },
+  "Road Dust":         { bg: "#FFF7ED", text: "#9A3412" },
+  "DG Set":            { bg: "#F0FDF4", text: "#14532D" },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function aqiColor(value: number): { bg: string; text: string } {
-  if (value >= 401) return { bg: "#7E0023", text: "#fff" };
-  if (value >= 301) return { bg: "#C0392B", text: "#fff" };
-  if (value >= 201) return { bg: "#E67E22", text: "#fff" };
-  if (value >= 101) return { bg: "#F1C40F", text: "#1C2B3A" };
-  if (value >= 51)  return { bg: "#2ECC71", text: "#fff" };
-  return { bg: "#27AE60", text: "#fff" };
-}
-
 function relativeTime(timeStr: string): string {
   const [h, m] = timeStr.split(":").map(Number);
-  const now = new Date();
-  const then = new Date();
+  const now    = new Date();
+  const then   = new Date();
   then.setHours(h, m, 0, 0);
-  const diffMs = now.getTime() - then.getTime();
-  const diffMin = Math.round(diffMs / 60000);
+  const diffMin = Math.round((now.getTime() - then.getTime()) / 60000);
   if (diffMin < 1)  return "just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const hrs = Math.floor(diffMin / 60);
-  return `${hrs} hr ago`;
+  if (diffMin < 60) return `${diffMin}m ago`;
+  return `${Math.floor(diffMin / 60)}h ago`;
 }
 
-// Play a short beep via Web Audio API
 function playBeep() {
   try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const osc = ctx.createOscillator();
+    const ctx  = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.setValueAtTime(0.14, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.4);
-  } catch {
-    // Ignore AudioContext errors (e.g., blocked by browser policy)
-  }
+  } catch { /* browser policy */ }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const SEVERITY_CONFIG: Record<Severity, { border: string; icon: React.ReactNode; label: string; bgTint: string; pulse: boolean }> = {
-  critical: { border: "#C0392B", icon: <AlertTriangle size={16} color="#C0392B" />, label: "Critical",  bgTint: "rgba(192,57,43,0.04)", pulse: true  },
-  warning:  { border: "#E67E22", icon: <AlertTriangle size={16} color="#E67E22" />, label: "Warning",   bgTint: "rgba(230,126,34,0.04)", pulse: false },
-  info:     { border: "#2980B9", icon: <Info size={16} color="#2980B9" />,          label: "Info",      bgTint: "rgba(41,128,185,0.04)", pulse: false },
+const SEV: Record<Severity, { border: string; icon: React.ReactNode; bgTint: string }> = {
+  critical: { border: "#C0392B", icon: <AlertTriangle size={14} color="#C0392B" />, bgTint: "rgba(192,57,43,0.03)" },
+  warning:  { border: "#D97706", icon: <AlertTriangle size={14} color="#D97706" />, bgTint: "rgba(217,119,6,0.03)"  },
+  info:     { border: "#2563EB", icon: <Info size={14} color="#2563EB" />,          bgTint: "rgba(37,99,235,0.03)"  },
 };
 
+// ─── Alert Card ───────────────────────────────────────────────────────────────
+
 interface AlertCardProps {
-  alert: AlertState;
+  alert:         AlertState;
   onAcknowledge: (id: number) => void;
-  onAssign: (id: number, team: string) => void;
-  isNew: boolean;
+  onAssign:      (id: number, dept: string) => void;
+  isNew:         boolean;
+  compact?:      boolean;
 }
 
-function AlertCard({ alert, onAcknowledge, onAssign, isNew }: AlertCardProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const cfg = SEVERITY_CONFIG[alert.severity];
-  const aqiStyle = aqiColor(alert.value);
+function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCardProps) {
+  const [deptOpen, setDeptOpen] = useState(false);
+  const dropRef                 = useRef<HTMLDivElement>(null);
+  const cfg                     = SEV[alert.severity];
+  const srcStyle                = SOURCE_STYLE[alert.source];
+  const depts                   = SOURCE_DEPTS[alert.source];
 
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+    function outside(e: MouseEvent) {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setDeptOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", outside);
+    return () => document.removeEventListener("mousedown", outside);
   }, []);
+
+  function mapsUrl(lat: number, lng: number) {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  }
 
   return (
     <div
-      className="alert-card"
       style={{
-        borderLeft: `4px solid ${cfg.border}`,
-        background: alert.acknowledged
-          ? "rgba(240,244,250,0.7)"
-          : `linear-gradient(90deg, ${cfg.bgTint}, transparent)`,
-        opacity: alert.acknowledged ? 0.5 : 1,
-        animation: isNew ? "slideDown 0.3s ease both" : undefined,
-        transition: "opacity 0.5s ease",
-        borderRadius: "10px",
-        border: `1px solid #e2e8f0`,
-        borderLeftWidth: "4px",
-        borderLeftColor: cfg.border,
-        borderLeftStyle: "solid",
-        padding: "14px 16px",
-        marginBottom: "10px",
-        position: "relative",
-        overflow: "visible",
+        background:  alert.acknowledged ? "#F9FAFB" : "#FFFFFF",
+        opacity:     alert.acknowledged ? 0.62 : 1,
+        animation:   isNew ? "slideDown 0.3s ease both" : undefined,
+        borderRadius:"9px",
+        border:      `1px solid rgba(13,27,42,0.07)`,
+        borderLeft:  `3px solid ${cfg.border}`,
+        padding:     "11px 13px",
+        position:    "relative",
+        boxShadow:   alert.acknowledged ? "none" : "0 1px 3px rgba(13,27,42,0.04)",
+        transition:  "opacity 0.4s ease",
       }}
     >
-      {/* Critical pulse bar */}
-      {alert.severity === "critical" && !alert.acknowledged && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "4px",
-            height: "100%",
-            borderRadius: "4px 0 0 4px",
-            background: cfg.border,
-            animation: "borderPulse 2s ease-in-out infinite",
-          }}
-        />
-      )}
-
-      <div className="flex items-start justify-between gap-3">
-        {/* Left: icon + info */}
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span style={{ lineHeight: 1, marginTop: "2px", flexShrink: 0, display: "flex", alignItems: "center" }}>
-            {cfg.icon}
-          </span>
-          <div className="flex-1 min-w-0">
-            {/* Title row */}
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span
-                style={{
-                  fontWeight: 600,
-                  color: "var(--navy)",
-                  fontSize: "14px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {alert.title}
-              </span>
-              {/* Ward pill */}
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  background:
-                    alert.severity === "critical"
-                      ? "#FFF5F5"
-                      : alert.severity === "warning"
-                      ? "#FFFBF0"
-                      : "#EFF8FF",
-                  color:
-                    alert.severity === "critical"
-                      ? "#C0392B"
-                      : alert.severity === "warning"
-                      ? "#B7580E"
-                      : "#2980B9",
-                  border: `1px solid ${
-                    alert.severity === "critical"
-                      ? "#FECACA"
-                      : alert.severity === "warning"
-                      ? "#FDE68A"
-                      : "#BFDBFE"
-                  }`,
-                  borderRadius: "9999px",
-                  padding: "1px 10px",
-                  fontSize: "11px",
-                  fontFamily: "var(--font-mono)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {alert.ward}
-              </span>
-            </div>
-
-            {/* Pollutant + timestamp */}
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#8A9BB0",
-                fontFamily: "var(--font-mono)",
-                marginBottom: "8px",
-              }}
-            >
-              {alert.pollutant}: {alert.value}{alert.pollutant === "CO" ? " mg/m³" : alert.pollutant === "SO₂" || alert.pollutant === "NO₂" ? " ppb" : alert.pollutant === "AQI" ? "" : " µg/m³"} · Threshold {alert.threshold} ·{" "}
-              <span style={{ color: "#A0AEC0" }}>
-                {alert.time} IST · {relativeTime(alert.time)}
-              </span>
-            </div>
-
-            {/* Status tags */}
-            <div className="flex flex-wrap gap-2">
-              {alert.acknowledged && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "#F0FDF4",
-                    color: "#166534",
-                    border: "1px solid #BBF7D0",
-                    borderRadius: "6px",
-                    padding: "2px 8px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Acknowledged
-                  {alert.acknowledgedAt && (
-                    <span style={{ fontWeight: 400, opacity: 0.75 }}>
-                      {" "}at {alert.acknowledgedAt}
-                    </span>
-                  )}
-                </span>
-              )}
-              {alert.assignedTeam && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "#EFF6FF",
-                    color: "#1D4ED8",
-                    border: "1px solid #BFDBFE",
-                    borderRadius: "6px",
-                    padding: "2px 8px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Assigned: {alert.assignedTeam}
-                </span>
-              )}
-            </div>
+      {/* Row 1 — icon + title + source badge */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "5px" }}>
+        <span style={{ flexShrink: 0, marginTop: "1px", display: "flex" }}>{cfg.icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>
+              {alert.title}
+            </span>
+            <span style={{
+              fontSize: "9px", fontWeight: 700, letterSpacing: "0.06em",
+              background: srcStyle.bg, color: srcStyle.text,
+              padding: "1px 7px", borderRadius: "5px", whiteSpace: "nowrap",
+            }}>
+              {alert.source}
+            </span>
           </div>
-        </div>
-
-        {/* Right: AQI badge + actions */}
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          {/* AQI badge */}
-          <div
-            style={{
-              background: aqiStyle.bg,
-              color: aqiStyle.text,
-              borderRadius: "8px",
-              padding: "4px 12px",
-              fontFamily: "var(--font-mono)",
-              fontWeight: 800,
-              fontSize: "20px",
-              lineHeight: 1.2,
-              minWidth: "56px",
-              textAlign: "center",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            {alert.value}
-            <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.05em", opacity: 0.85 }}>
-              AQI
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          {!alert.acknowledged && (
-            <div className="flex gap-2">
-              {/* Acknowledge */}
-              <button
-                onClick={() => onAcknowledge(alert.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: "#F0FDF4",
-                  color: "#166534",
-                  border: "1px solid #BBF7D0",
-                  borderRadius: "7px",
-                  padding: "5px 10px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "#DCFCE7";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "#F0FDF4";
-                }}
-              >
-                ✓ Acknowledge
-              </button>
-
-              {/* Assign team */}
-              <div style={{ position: "relative" }} ref={dropdownRef}>
-                <button
-                  onClick={() => setDropdownOpen((v) => !v)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "#EFF6FF",
-                    color: "#1D4ED8",
-                    border: "1px solid #BFDBFE",
-                    borderRadius: "7px",
-                    padding: "5px 10px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "#DBEAFE";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "#EFF6FF";
-                  }}
-                >
-                  → Assign Team
-                  <span style={{ fontSize: "10px", marginLeft: "2px" }}>
-                    {dropdownOpen ? "▲" : "▼"}
-                  </span>
-                </button>
-
-                {dropdownOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      top: "calc(100% + 6px)",
-                      background: "#fff",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "10px",
-                      boxShadow: "0 8px 24px rgba(13,27,42,0.14)",
-                      minWidth: "210px",
-                      zIndex: 50,
-                      overflow: "hidden",
-                      animation: "fadeInDown 0.15s ease",
-                    }}
-                  >
-                    {TEAMS.map((team) => (
-                      <button
-                        key={team}
-                        onClick={() => {
-                          onAssign(alert.id, team);
-                          setDropdownOpen(false);
-                        }}
-                        style={{
-                          display: "block",
-                          width: "100%",
-                          textAlign: "left",
-                          padding: "9px 14px",
-                          fontSize: "13px",
-                          color: "var(--navy)",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          fontWeight: 500,
-                          transition: "background 0.1s",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = "#EFF6FF";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                        }}
-                      >
-                        {team}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Row 2 — ward + reading + time + confidence */}
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", marginBottom: "8px", paddingLeft: "22px" }}>
+        <span style={{
+          fontSize: "10px", fontWeight: 600, fontFamily: "var(--font-mono)",
+          background: "#F1F5F9", color: "#374151",
+          padding: "1px 7px", borderRadius: "20px",
+        }}>
+          {alert.ward}
+        </span>
+        <span style={{ fontSize: "10px", color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>
+          {alert.pollutant}: <strong style={{ color: "#374151" }}>{alert.value}</strong>
+          {alert.pollutant === "CO" ? " mg/m³" : alert.pollutant === "AQI" ? "" : alert.pollutant === "SO₂" || alert.pollutant === "NO₂" ? " ppb" : " µg/m³"}
+        </span>
+        <span style={{ fontSize: "10px", color: "#CBD5E0" }}>·</span>
+        <span style={{ fontSize: "10px", color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>
+          {relativeTime(alert.time)}
+        </span>
+        <span style={{ fontSize: "10px", color: "#CBD5E0" }}>·</span>
+        <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+          AI: <strong style={{ color: alert.confidence >= 85 ? "#16A34A" : "#D97706" }}>{alert.confidence}%</strong>
+        </span>
+      </div>
+
+      {/* Row 3 — action buttons */}
+      {!alert.acknowledged && (
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", paddingLeft: "22px" }}>
+
+          {/* Acknowledge */}
+          <button
+            onClick={() => onAcknowledge(alert.id)}
+            style={btnStyle("#F0FDF4", "#166534", "#BBF7D0")}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#DCFCE7"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#F0FDF4"; }}
+          >
+            ✓ Ack
+          </button>
+
+          {/* Dispatch — department selector */}
+          <div style={{ position: "relative" }} ref={dropRef}>
+            <button
+              onClick={() => setDeptOpen(v => !v)}
+              style={btnStyle("#EFF6FF", "#1D4ED8", "#BFDBFE")}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#DBEAFE"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#EFF6FF"; }}
+            >
+              → Dispatch {deptOpen ? "▲" : "▼"}
+            </button>
+            {deptOpen && (
+              <div style={{
+                position: "absolute", left: 0, top: "calc(100% + 5px)",
+                background: "#fff", border: "1px solid #E2E8F0",
+                borderRadius: "10px", boxShadow: "0 8px 28px rgba(13,27,42,0.14)",
+                minWidth: "220px", zIndex: 200, overflow: "hidden",
+              }}>
+                <div style={{ padding: "7px 12px 5px", fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", color: "#9CA3AF", textTransform: "uppercase" }}>
+                  Recommended Departments
+                </div>
+                {depts.map((dept) => (
+                  <button
+                    key={dept}
+                    onClick={() => { onAssign(alert.id, dept); setDeptOpen(false); }}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left",
+                      padding: "8px 12px", fontSize: "12px", fontWeight: 500,
+                      color: "#0D1B2A", background: "transparent", border: "none",
+                      cursor: "pointer", transition: "background 0.1s",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#EFF6FF"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                  >
+                    {dept}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* GPS + Evidence — hidden in compact (dashboard) mode */}
+          {!compact && (
+            <>
+              <a
+                href={mapsUrl(alert.lat, alert.lng)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open location in Google Maps"
+                style={{
+                  ...btnStyle("#F8FAFC", "#374151", "#E2E8F0"),
+                  display: "inline-flex", alignItems: "center", gap: "3px",
+                  textDecoration: "none",
+                }}
+              >
+                <MapPin size={10} />
+                GPS
+              </a>
+              <button
+                title="Download Evidence Package (PDF)"
+                onClick={() => alert.ward && console.log("evidence:", alert.id)}
+                style={{ ...btnStyle("#F8FAFC", "#374151", "#E2E8F0"), display: "inline-flex", alignItems: "center", gap: "3px" }}
+              >
+                <Download size={10} />
+                Evidence
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Acknowledged state */}
+      {alert.acknowledged && (
+        <div style={{ paddingLeft: "22px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          <span style={tagStyle("#F0FDF4", "#166534", "#BBF7D0")}>
+            ✓ Acknowledged{alert.acknowledgedAt && ` at ${alert.acknowledgedAt}`}
+          </span>
+          {alert.assignedDept && (
+            <span style={tagStyle("#EFF6FF", "#1D4ED8", "#BFDBFE")}>
+              → {alert.assignedDept}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Style helpers ────────────────────────────────────────────────────────────
+
+function btnStyle(bg: string, color: string, border: string): React.CSSProperties {
+  return {
+    background: bg, color, border: `1px solid ${border}`,
+    borderRadius: "6px", padding: "3px 9px",
+    fontSize: "10px", fontWeight: 600,
+    cursor: "pointer", whiteSpace: "nowrap",
+    transition: "background 0.12s ease",
+    lineHeight: 1.6,
+  };
+}
+
+function tagStyle(bg: string, color: string, border: string): React.CSSProperties {
+  return {
+    display: "inline-flex", alignItems: "center", gap: "4px",
+    background: bg, color, border: `1px solid ${border}`,
+    borderRadius: "5px", padding: "2px 8px",
+    fontSize: "10px", fontWeight: 600,
+  };
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export const AlertCommandStrip: React.FC = () => {
-  const [alerts, setAlerts] = useState<AlertState[]>(() =>
-    INITIAL_ALERTS.map((a) => ({ ...a, acknowledged: false, isNew: false }))
-  );
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [soundOn, setSoundOn] = useState(true);
-  const [countdown, setCountdown] = useState(30);
-  const [newAlertIds, setNewAlertIds] = useState<Set<number>>(new Set());
-  const soundRef = useRef(soundOn);
-  soundRef.current = soundOn;
+interface AlertCommandStripProps {
+  compact?: boolean;
+}
 
-  // Auto-refresh countdown
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          // Simulate refresh: mark all as not-new
-          setNewAlertIds(new Set());
-          return 30;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+export const AlertCommandStrip: React.FC<AlertCommandStripProps> = ({ compact }) => {
+  const [alerts, setAlerts] = useState<AlertState[]>(() =>
+    INITIAL_ALERTS.map((a) => ({ ...a, acknowledged: false }))
+  );
+  const newIds = new Set<number>();
 
   const handleAcknowledge = useCallback((id: number) => {
     const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-    setAlerts((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, acknowledged: true, acknowledgedAt: timeStr } : a
-      )
-    );
+    const t   = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, acknowledged: true, acknowledgedAt: t } : a));
   }, []);
 
-  const handleAssign = useCallback((id: number, team: string) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, assignedTeam: team } : a))
-    );
+  const handleAssign = useCallback((id: number, dept: string) => {
+    setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, assignedDept: dept } : a));
   }, []);
 
-  // Counts
-  const criticalCount   = alerts.filter((a) => a.severity === "critical" && !a.acknowledged).length;
-  const warningCount    = alerts.filter((a) => a.severity === "warning"  && !a.acknowledged).length;
-  const acknowledgedCount = alerts.filter((a) => a.acknowledged).length;
-
-  // Filtered list
-  const visible = alerts.filter((a) => {
-    if (filter === "all")          return true;
-    if (filter === "acknowledged") return a.acknowledged;
-    return a.severity === filter && !a.acknowledged;
-  });
-
-  const filters: { key: FilterType; label: string; icon: React.ReactNode }[] = [
-    { key: "all",          label: "All",          icon: <Circle size={10} color="#8A9BB0" /> },
-    { key: "critical",     label: "Critical",     icon: <Circle size={10} fill="#C0392B" color="#C0392B" /> },
-    { key: "warning",      label: "Warning",      icon: <Circle size={10} fill="#E67E22" color="#E67E22" /> },
-    { key: "info",         label: "Info",         icon: <Circle size={10} fill="#2980B9" color="#2980B9" /> },
-    { key: "acknowledged", label: "Acknowledged", icon: <CheckCircle size={10} color="#166534" /> },
-  ];
+  const unacked = alerts.filter((a) => !a.acknowledged);
+  /* In compact (dashboard) mode show only the 2 highest-severity unacknowledged alerts */
+  const visible     = compact ? unacked.slice(0, 2) : unacked;
+  const acknowledged = compact ? [] : alerts.filter((a) => a.acknowledged);
 
   return (
-    <>
-      {/* Inject keyframe animations */}
-      <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes borderPulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.35; }
-        }
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      <div
-        className="panel-card p-5"
-        style={{ borderTop: "3px solid var(--accent-teal)" }}
-      >
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="section-label">Active Alerts</div>
-            <h2
-              style={{
-                fontSize: "17px",
-                fontWeight: 700,
-                color: "var(--navy)",
-                margin: 0,
-              }}
-            >
-              Alert Command
-            </h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {visible.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "40px 16px", color: "#8A9BB0" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+            <CheckCircle size={36} color="#16A34A" />
           </div>
-
-          {/* Sound toggle + auto-refresh */}
-          <div className="flex items-center gap-3">
-            {/* Auto-refresh indicator */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "11px",
-                color: "#8A9BB0",
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "12px",
-                  height: "12px",
-                  border: "2px solid #0F8B8D",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 1.2s linear infinite",
-                }}
-              />
-              Refreshing in {countdown}s
-            </div>
-
-            {/* Sound toggle */}
-            <button
-              onClick={() => setSoundOn((v) => !v)}
-              title={soundOn ? "Mute alert sound" : "Enable alert sound"}
-              style={{
-                background: soundOn ? "rgba(15,139,141,0.08)" : "rgba(138,155,176,0.1)",
-                border: `1px solid ${soundOn ? "rgba(15,139,141,0.25)" : "#e2e8f0"}`,
-                borderRadius: "8px",
-                padding: "6px 10px",
-                fontSize: "16px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                lineHeight: 1,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-              }}
-            >
-              {soundOn ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8a6 6 0 0 1 0 8" /><path d="M15.54 11a3 3 0 0 1 0 2" />
-                  <path d="M11 5 6 9H2v6h4l5 4V5z" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 5 6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              )}
-            </button>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#4A6080", marginBottom: "4px" }}>
+            All parameters within limits
           </div>
+          <div style={{ fontSize: "11px" }}>No active enforcement actions required.</div>
         </div>
+      ) : (
+        visible.map((alert) => (
+          <AlertCard
+            key={alert.id}
+            alert={alert}
+            onAcknowledge={handleAcknowledge}
+            onAssign={handleAssign}
+            isNew={newIds.has(alert.id)}
+            compact={compact}
+          />
+        ))
+      )}
 
-        {/* ── Summary Strip ───────────────────────────────────────────── */}
-        <div
-          className="flex gap-3 mb-4"
-          style={{ flexWrap: "wrap" }}
-        >
-          {/* Critical box */}
-          <button
-            onClick={() => setFilter(filter === "critical" ? "all" : "critical")}
-            style={{
-              flex: "1 1 120px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              background: filter === "critical" ? "rgba(192,57,43,0.12)" : "rgba(192,57,43,0.06)",
-              border: `1px solid ${filter === "critical" ? "rgba(192,57,43,0.4)" : "rgba(192,57,43,0.18)"}`,
-              borderRadius: "12px",
-              padding: "10px 14px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              textAlign: "left",
-            }}
-          >
-            <Circle size={20} fill="#C0392B" color="#C0392B" />
-            <div>
-              <div style={{ fontSize: "20px", fontWeight: 800, color: "#C0392B", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
-                {criticalCount}
-              </div>
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#C0392B", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Critical
-              </div>
-            </div>
-          </button>
-
-          {/* Warning box */}
-          <button
-            onClick={() => setFilter(filter === "warning" ? "all" : "warning")}
-            style={{
-              flex: "1 1 120px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              background: filter === "warning" ? "rgba(230,126,34,0.12)" : "rgba(230,126,34,0.06)",
-              border: `1px solid ${filter === "warning" ? "rgba(230,126,34,0.4)" : "rgba(230,126,34,0.18)"}`,
-              borderRadius: "12px",
-              padding: "10px 14px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              textAlign: "left",
-            }}
-          >
-            <Circle size={20} fill="#E67E22" color="#E67E22" />
-            <div>
-              <div style={{ fontSize: "20px", fontWeight: 800, color: "#B7580E", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
-                {warningCount}
-              </div>
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#B7580E", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Warning
-              </div>
-            </div>
-          </button>
-
-          {/* Acknowledged box */}
-          <button
-            onClick={() => setFilter(filter === "acknowledged" ? "all" : "acknowledged")}
-            style={{
-              flex: "1 1 120px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              background: filter === "acknowledged" ? "rgba(22,101,52,0.12)" : "rgba(22,101,52,0.06)",
-              border: `1px solid ${filter === "acknowledged" ? "rgba(22,101,52,0.4)" : "rgba(22,101,52,0.18)"}`,
-              borderRadius: "12px",
-              padding: "10px 14px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              textAlign: "left",
-            }}
-          >
-            <CheckCircle size={20} color="#166534" />
-            <div>
-              <div style={{ fontSize: "20px", fontWeight: 800, color: "#166534", lineHeight: 1, fontFamily: "var(--font-mono)" }}>
-                {acknowledgedCount}
-              </div>
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#166534", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Acknowledged
-              </div>
-            </div>
-          </button>
+      {/* Acknowledged section — only shown in full (non-compact) mode */}
+      {!compact && acknowledged.length > 0 && (
+        <div style={{ marginTop: "8px" }}>
+          <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: "6px", padding: "0 2px" }}>
+            Acknowledged ({acknowledged.length})
+          </div>
+          {acknowledged.map((alert) => (
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              onAcknowledge={handleAcknowledge}
+              onAssign={handleAssign}
+              isNew={false}
+              compact={compact}
+            />
+          ))}
         </div>
-
-        {/* ── Filter Bar ──────────────────────────────────────────────── */}
-        <div
-          className="flex gap-1 mb-4"
-          style={{
-            background: "rgba(244,246,250,0.8)",
-            borderRadius: "10px",
-            padding: "4px",
-            flexWrap: "wrap",
-          }}
-        >
-          {filters.map(({ key, label, icon }) => {
-            const active = filter === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "6px 14px",
-                  borderRadius: "7px",
-                  border: "none",
-                  background: active ? "#fff" : "transparent",
-                  boxShadow: active ? "0 1px 4px rgba(13,27,42,0.10)" : "none",
-                  color: active ? "var(--accent-teal)" : "#8A9BB0",
-                  fontWeight: active ? 700 : 500,
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  position: "relative",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span>{icon}</span>
-                {label}
-                {active && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: "2px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: "20px",
-                      height: "2px",
-                      background: "var(--accent-teal)",
-                      borderRadius: "2px",
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Alert Cards ─────────────────────────────────────────────── */}
-        <div>
-          {visible.length === 0 ? (
-            /* Empty state */
-            <div
-              style={{
-                textAlign: "center",
-                padding: "48px 24px",
-                color: "#8A9BB0",
-              }}
-            >
-              <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><CheckCircle size={40} color="#166534" /></div>
-              <div style={{ fontSize: "15px", fontWeight: 600, color: "#4A6080", marginBottom: "4px" }}>
-                No active alerts for selected filter
-              </div>
-              <div style={{ fontSize: "13px" }}>
-                All monitored parameters within acceptable thresholds.
-              </div>
-            </div>
-          ) : (
-            visible.map((alert) => (
-              <AlertCard
-                key={alert.id}
-                alert={alert}
-                onAcknowledge={handleAcknowledge}
-                onAssign={handleAssign}
-                isNew={newAlertIds.has(alert.id)}
-              />
-            ))
-          )}
-        </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 };

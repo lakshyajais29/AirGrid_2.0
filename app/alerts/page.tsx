@@ -1,62 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert } from "../api/alerts/route";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar"; // placeholder if needed
-import { CalendarIcon } from "@radix-ui/react-icons";
 
 // ---------------------------------------------------------------------------
 // Utility: Determine GRAP level from the highest AQI value among active alerts
 // ---------------------------------------------------------------------------
 function getGRAPLevel(alerts: Alert[]) {
-  if (alerts.length === 0) return { level: 0, colour: "#e5e7eb", actions: [] };
+  if (alerts.length === 0) return { level: 0, bg: "#16A34A", actions: [] as string[] };
   const maxAQI = Math.max(...alerts.map((a) => a.currentValue));
-  let level = 0,
-    colour = "",
-    actions: string[] = [];
-  if (maxAQI >= 201 && maxAQI <= 300) {
-    level = 1;
-    colour = "bg-yellow-400";
-    actions = ["Issue public advisory", "Increase monitoring frequency", "Notify ward officers"];
-  } else if (maxAQI >= 301 && maxAQI <= 400) {
-    level = 2;
-    colour = "bg-orange-500";
-    actions = ["Activate emergency response", "Deploy mobile monitoring units", "Restrict outdoor activities"];
-  } else if (maxAQI >= 401 && maxAQI <= 450) {
-    level = 3;
-    colour = "bg-red-600";
-    actions = ["Close schools", "Issue health warnings", "Deploy air purifiers in critical areas"];
-  } else if (maxAQI > 450) {
-    level = 4;
-    colour = "bg-maroon-800"; // custom class will be defined via CSS var
-    actions = ["Declare state of emergency", "Evacuate vulnerable populations", "Mobilise state resources"];
-  } else {
-    // Below GRAP 1
-    level = 0;
-    colour = "bg-green-500";
-    actions = [];
-  }
-  return { level, colour, actions };
+  if (maxAQI > 450)  return { level: 4, bg: "#7F1D1D", actions: ["Declare state of emergency", "Evacuate vulnerable populations", "Mobilise state resources"] };
+  if (maxAQI > 400)  return { level: 3, bg: "#DC2626", actions: ["Close schools", "Issue health warnings", "Deploy air purifiers in critical areas"] };
+  if (maxAQI > 300)  return { level: 2, bg: "#EA580C", actions: ["Activate emergency response", "Deploy mobile monitoring units", "Restrict outdoor activities"] };
+  if (maxAQI >= 201) return { level: 1, bg: "#D97706", actions: ["Issue public advisory", "Increase monitoring frequency", "Notify ward officers"] };
+  return { level: 0, bg: "#16A34A", actions: [] as string[] };
 }
 
 // ---------------------------------------------------------------------------
 // GRAP Status Banner – Full‑width top section
 // ---------------------------------------------------------------------------
 function GRAPStatusBanner({ alerts }: { alerts: Alert[] }) {
-  const { level, colour, actions } = getGRAPLevel(alerts);
+  const { level, bg, actions } = getGRAPLevel(alerts);
   return (
-    <div className={`w-full py-4 px-6 rounded ${colour} text-white`}>
-      <h2 className="text-2xl font-semibold mb-2">GRAP Level {level}</h2>
+    <div style={{ background: bg, color: "#fff", padding: "16px 24px", borderRadius: "10px", marginBottom: "4px" }}>
+      <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: level > 0 ? "8px" : 0 }}>
+        {level === 0 ? "✅ Air Quality Within Limits · No Active GRAP Stage" : `⚠️ GRAP Stage ${level} Active`}
+      </h2>
       {level > 0 && (
-        <ul className="list-disc list-inside">
-          {actions.map((a, i) => (
-            <li key={i}>{a}</li>
-          ))}
+        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", lineHeight: "1.8" }}>
+          {actions.map((a, i) => <li key={i}>{a}</li>)}
         </ul>
       )}
     </div>
@@ -273,7 +250,6 @@ const mockHistory: HistoryRow[] = [
 function AlertHistoryTable() {
   const [filterSeverity, setFilterSeverity] = useState<string>("");
   const [filterWard, setFilterWard] = useState<string>("");
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
   const downloadCSV = () => {
     const header = ["Date", "Ward", "Pollutant", "Peak Value", "Duration", "Status"].join(",");
@@ -383,18 +359,22 @@ function AlertHistoryTable() {
 // ---------------------------------------------------------------------------
 // Main Alerts Page Component
 // ---------------------------------------------------------------------------
+const SEED_ALERTS: Alert[] = [
+  { id: "alert-1", ward: "Anand Vihar", pollutant: "PM2.5", currentValue: 285, threshold: 150, unit: "µg/m³", severity: "Critical", duration: "2h 15m", assignedOfficer: "Rajesh Kumar",  status: "Active", triggeredAt: new Date(Date.now() - 2 * 3600_000).toISOString() },
+  { id: "alert-2", ward: "Saket",       pollutant: "NO₂",   currentValue: 85,  threshold: 60,  unit: "ppb",    severity: "High",     duration: "1h 40m", assignedOfficer: "Neha Sharma",   status: "Active", triggeredAt: new Date(Date.now() - 1.5 * 3600_000).toISOString() },
+  { id: "alert-3", ward: "Laxmi Nagar", pollutant: "SO₂",   currentValue: 55,  threshold: 50,  unit: "ppb",    severity: "Medium",   duration: "45m",    assignedOfficer: "Amit Singh",    status: "Active", triggeredAt: new Date(Date.now() - 45 * 60_000).toISOString() },
+  { id: "alert-4", ward: "Dwarka",      pollutant: "PM10",  currentValue: 320, threshold: 200, unit: "µg/m³", severity: "Critical", duration: "3h 10m", assignedOfficer: "Sunita Verma",  status: "Active", triggeredAt: new Date(Date.now() - 3 * 3600_000).toISOString() },
+];
+
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts] = useState<Alert[]>(SEED_ALERTS);
+  const [loading] = useState(false);
 
   useEffect(() => {
     fetch("/api/alerts")
       .then((res) => res.json())
-      .then((data) => {
-        setAlerts(data.alerts ?? []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      .then((data) => { if (data.alerts?.length) setAlerts(data.alerts); })
+      .catch(() => {});
   }, []);
 
   return (

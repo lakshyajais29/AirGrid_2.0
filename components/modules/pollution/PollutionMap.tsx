@@ -64,11 +64,11 @@ const TIME_OFFSETS: Record<TimeRange, number> = {
 
 /* ── Helpers ── */
 function aqiColor(aqi: number): string {
-  if (aqi <= 50)  return "var(--safe-green)";
+  if (aqi <= 50)  return "#55A84F";
   if (aqi <= 100) return "#A8D08D";
   if (aqi <= 200) return "#FFC000";
-  if (aqi <= 300) return "var(--critical-red)";
-  return "#800000";
+  if (aqi <= 300) return "#E93F33";
+  return "#AF2D24";
 }
 
 function aqiCategory(aqi: number): string {
@@ -121,16 +121,16 @@ function HeatmapLayer({ stations, pollutant }: { stations: Station[]; pollutant:
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const heat = (L as any).heatLayer(points, {
-        radius: 40,
-        blur: 30,
+        radius: 45,
+        blur: 35,
         maxZoom: 14,
         max: 1.0,
         gradient: {
-          0.2: "#1E8449",
-          0.4: "#A8D08D",
-          0.6: "#FFC000",
-          0.8: "#C0392B",
-          1.0: "#800000",
+          0.1: "rgba(85,168,79,0.75)",
+          0.3: "rgba(255,192,0,0.85)",
+          0.55:"rgba(242,156,51,0.92)",
+          0.75:"rgba(233,63,51,1.0)",
+          1.0: "rgba(127,0,0,1.0)",
         },
       });
       heat.addTo(map);
@@ -170,15 +170,17 @@ function MapBrandBadge() {
         onAdd: function () {
           const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
           div.innerHTML = "AIRGRID OS";
-          div.style.background = "rgba(13,27,42,0.85)";
-          div.style.color = "white";
+          div.style.background = "rgba(255,255,255,0.88)";
+          div.style.color = "#0D1B2A";
           div.style.fontFamily = "monospace";
-          div.style.padding = "6px 12px";
+          div.style.padding = "5px 10px";
           div.style.borderRadius = "6px";
-          div.style.border = "1px solid rgba(0,245,212,0.3)";
-          div.style.fontSize = "12px";
+          div.style.border = "1px solid rgba(13,27,42,0.12)";
+          div.style.fontSize = "11px";
           div.style.fontWeight = "bold";
+          div.style.letterSpacing = "0.06em";
           div.style.pointerEvents = "none";
+          div.style.boxShadow = "0 1px 4px rgba(13,27,42,0.10)";
           return div;
         },
       });
@@ -219,15 +221,18 @@ function StatusOverlayBadge({ source }: { source: string }) {
         options: { position: "topright" },
         onAdd: function () {
           const div = L.DomUtil.create("div", "leaflet-bar leaflet-control");
-          div.innerHTML = source === "waqi" ? "<span class='live-dot'></span> WAQI Live" : "<span class='live-dot'></span> Mock Data";
-          div.style.background = "rgba(13,27,42,0.85)";
-          div.style.color = source === "waqi" ? "var(--safe-green)" : "var(--gov-gold)";
+          const label = source === "waqi" ? "WAQI Live" : "Mock Data";
+          div.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#16A34A;margin-right:5px;vertical-align:middle;animation:livePulse 2s infinite"></span>${label} ▾`;
+          div.style.background = "rgba(255,255,255,0.92)";
+          div.style.color = "#0D1B2A";
           div.style.fontFamily = "monospace";
-          div.style.padding = "4px 8px";
+          div.style.padding = "5px 10px";
           div.style.borderRadius = "6px";
-          div.style.border = "1px solid rgba(0,245,212,0.3)";
-          div.style.fontSize = "10px";
-          div.style.pointerEvents = "none";
+          div.style.border = "1px solid rgba(13,27,42,0.12)";
+          div.style.fontSize = "11px";
+          div.style.fontWeight = "600";
+          div.style.cursor = "default";
+          div.style.boxShadow = "0 1px 4px rgba(13,27,42,0.10)";
           return div;
         },
       });
@@ -250,7 +255,13 @@ function StatusOverlayBadge({ source }: { source: string }) {
 }
 
 /* ── Main Component ── */
-export default function PollutionMap() {
+export default function PollutionMap({
+  compact = false,
+  onStationClick,
+}: {
+  compact?: boolean;
+  onStationClick?: (station: Station) => void;
+}) {
   const searchParams = useSearchParams();
   const isDemo = searchParams.get("demo") === "true";
   const [stations, setStations] = useState<Station[]>([]);
@@ -377,125 +388,124 @@ export default function PollutionMap() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div
-            className="inline-block w-8 h-8 border-3 rounded-full animate-spin mb-3"
-            style={{
-              borderColor: "var(--mid-blue)",
-              borderTopColor: "transparent",
-            }}
-          />
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Loading pollution data…
-          </p>
-        </div>
+      <div style={{
+        height: "100%", minHeight: "200px",
+        background: "linear-gradient(110deg, #e8ecf4 30%, #dde3ee 50%, #e8ecf4 70%)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.4s linear infinite",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "inherit",
+      }}>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+        <span style={{ color: "#9CA3AF", fontSize: "12px", fontFamily: "monospace", letterSpacing: "0.1em" }}>
+          LOADING MAP…
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: compact ? 0 : "12px", padding: compact ? 0 : "12px" }}>
       {/* ── Control Bar ── */}
-      <div
-        className="rounded-lg p-4 flex flex-wrap items-center gap-4"
-        style={{ background: "white", border: "1px solid #E2E8F0" }}
-      >
-        {/* Pollutant Selector */}
-        <div className="flex items-center gap-1">
-          <span
-            className="text-xs font-semibold mr-2 uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Pollutant
-          </span>
-          {(Object.keys(POLLUTANT_LABELS) as Pollutant[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPollutant(p)}
-              className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-              style={{
-                background: pollutant === p ? "var(--mid-blue)" : "#F1F5F9",
-                color: pollutant === p ? "#fff" : "var(--text-primary)",
-                border: pollutant === p ? "1px solid var(--mid-blue)" : "1px solid #E2E8F0",
-              }}
-            >
-              {POLLUTANT_LABELS[p].label}
-            </button>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
-
-        {/* Time Range */}
-        <div className="flex items-center gap-1">
-          <span
-            className="text-xs font-semibold mr-2 uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Time
-          </span>
-          {(["now", "-6h", "-12h", "-24h"] as TimeRange[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTimeRange(t)}
-              className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-              style={{
-                background: timeRange === t ? "var(--navy)" : "#F1F5F9",
-                color: timeRange === t ? "#fff" : "var(--text-primary)",
-                border: timeRange === t ? "1px solid var(--navy)" : "1px solid #E2E8F0",
-              }}
-            >
-              {t === "now" ? "Now" : t}
-            </button>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
-
-        {/* Heatmap Toggle */}
-        <button
-          onClick={() => setShowHeatmap(!showHeatmap)}
-          className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-          style={{
-            background: showHeatmap ? "var(--accent-teal)" : "#F1F5F9",
-            color: showHeatmap ? "#fff" : "var(--text-primary)",
-            border: showHeatmap ? "1px solid var(--accent-teal)" : "1px solid #E2E8F0",
-          }}
+      {!compact && (
+        <div
+          className="rounded-lg p-4 flex flex-wrap items-center gap-4"
+          style={{ background: "white", border: "1px solid #E2E8F0" }}
         >
-          Heatmap
-        </button>
+          {/* Pollutant Selector */}
+          <div className="flex items-center gap-1">
+            <span
+              className="text-xs font-semibold mr-2 uppercase tracking-wider"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Pollutant
+            </span>
+            {(Object.keys(POLLUTANT_LABELS) as Pollutant[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPollutant(p)}
+                className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                style={{
+                  background: pollutant === p ? "var(--mid-blue)" : "#F1F5F9",
+                  color: pollutant === p ? "#fff" : "var(--text-primary)",
+                  border: pollutant === p ? "1px solid var(--mid-blue)" : "1px solid #E2E8F0",
+                }}
+              >
+                {POLLUTANT_LABELS[p].label}
+              </button>
+            ))}
+          </div>
 
-        {/* Right side: status */}
-        <div className="ml-auto flex items-center gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
-          <span className="font-mono">
-            {source === "waqi" ? <><span className="live-dot" /> WAQI Live</> : <><span className="live-dot" /> Mock Data</>}
-          </span>
-          <span className="font-mono">
-            Refreshing in {countdown}s
-          </span>
-          <span className="font-mono">
-            Last: {lastFetch}
-          </span>
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
+
+          {/* Time Range */}
+          <div className="flex items-center gap-1">
+            <span
+              className="text-xs font-semibold mr-2 uppercase tracking-wider"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Time
+            </span>
+            {(["now", "-6h", "-12h", "-24h"] as TimeRange[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTimeRange(t)}
+                className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                style={{
+                  background: timeRange === t ? "var(--navy)" : "#F1F5F9",
+                  color: timeRange === t ? "#fff" : "var(--text-primary)",
+                  border: timeRange === t ? "1px solid var(--navy)" : "1px solid #E2E8F0",
+                }}
+              >
+                {t === "now" ? "Now" : t}
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
+
+          {/* Heatmap Toggle */}
+          <button
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+            style={{
+              background: showHeatmap ? "var(--accent-teal)" : "#F1F5F9",
+              color: showHeatmap ? "#fff" : "var(--text-primary)",
+              border: showHeatmap ? "1px solid var(--accent-teal)" : "1px solid #E2E8F0",
+            }}
+          >
+            Heatmap
+          </button>
+
+          {/* Right side: status */}
+          <div className="ml-auto flex items-center gap-3 text-xs" style={{ color: "var(--text-muted)" }}>
+            <span className="font-mono">
+              {source === "waqi" ? <><span className="live-dot" /> WAQI Live</> : <><span className="live-dot" /> Mock Data</>}
+            </span>
+            <span className="font-mono">
+              Refreshing in {countdown}s
+            </span>
+            <span className="font-mono">
+              Last: {lastFetch}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Map ── */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ border: "1px solid #E2E8F0", height: "520px" }}
-      >
+      <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
         <MapContainer
           center={[28.6139, 77.2090]}
-          zoom={isDemo ? 12 : 11}
+          zoom={11}
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={true}
           scrollWheelZoom={true}
-          style={{ height: "100%", width: "100%" }}
           className="z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
 
@@ -513,12 +523,15 @@ export default function PollutionMap() {
               <CircleMarker
                 key={s.id}
                 center={[s.lat, s.lng]}
-                radius={20}
+                radius={18}
                 pathOptions={{
                   fillColor: markerColor,
-                  fillOpacity: 0.85,
-                  color: "#fff",
+                  fillOpacity: 0.92,
+                  color: "rgba(255,255,255,0.85)",
                   weight: 2,
+                }}
+                eventHandlers={{
+                  click: () => onStationClick?.(s),
                 }}
               >
                 <Tooltip permanent direction="top" offset={[0, -22]} opacity={1}>
@@ -626,215 +639,219 @@ export default function PollutionMap() {
         </MapContainer>
       </div>
 
-      {/* ── Legend ── */}
-      <div
-        className="flex flex-wrap items-center gap-4 px-4 py-2 rounded-lg text-xs"
-        style={{ background: "white", border: "1px solid #E2E8F0" }}
-      >
-        <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-          AQI Scale
-        </span>
-        {[
-          { range: "0–50", color: "var(--safe-green)", label: "Good" },
-          { range: "51–100", color: "#A8D08D", label: "Satisfactory" },
-          { range: "101–200", color: "#FFC000", label: "Moderate" },
-          { range: "201–300", color: "var(--critical-red)", label: "Poor" },
-          { range: "301+", color: "#800000", label: "Severe" },
-        ].map((l) => (
-          <span key={l.range} className="inline-flex items-center gap-1.5">
-            <span
-              className="inline-block w-3 h-3 rounded-full"
-              style={{ background: l.color }}
-            />
-            <span style={{ color: "var(--text-primary)" }}>{l.range}</span>
-            <span style={{ color: "var(--text-muted)" }}>{l.label}</span>
-          </span>
-        ))}
-
-        <div className="w-px h-4 mx-2" style={{ background: "#E2E8F0" }} />
-
-        <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-          Data Quality
-        </span>
-        {[
-          { color: "var(--safe-green)", label: "Live (<5m)" },
-          { color: "#FFC000", label: "Delayed" },
-          { color: "var(--critical-red)", label: "Offline" },
-        ].map((l) => (
-          <span key={l.label} className="inline-flex items-center gap-1.5">
-            <span
-              className="inline-block w-2 h-2 rounded-full"
-              style={{ background: l.color }}
-            />
-            <span style={{ color: "var(--text-muted)" }}>{l.label}</span>
-          </span>
-        ))}
-      </div>
-
-      {/* ── Station Comparison Table ── */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: "white", border: "1px solid #E2E8F0" }}
-      >
-        {/* Table Header */}
-        <div
-          className="flex items-center justify-between px-5 py-3"
-          style={{ borderBottom: "1px solid #E2E8F0" }}
-        >
-          <h3 className="text-base font-semibold" style={{ color: "var(--navy)" }}>
-            Station Comparison
-          </h3>
-          <button
-            onClick={exportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors"
-            style={{
-              background: "#F1F5F9",
-              color: "var(--text-primary)",
-              border: "1px solid #E2E8F0",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--mid-blue)";
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#F1F5F9";
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
+      {!compact && (
+        <>
+          {/* ── Legend ── */}
+          <div
+            className="flex flex-wrap items-center gap-4 px-4 py-2 rounded-lg text-xs"
+            style={{ background: "white", border: "1px solid #E2E8F0", flexShrink: 0 }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export CSV
-          </button>
-        </div>
+            <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              AQI Scale
+            </span>
+            {[
+              { range: "0–50", color: "var(--safe-green)", label: "Good" },
+              { range: "51–100", color: "#A8D08D", label: "Satisfactory" },
+              { range: "101–200", color: "#FFC000", label: "Moderate" },
+              { range: "201–300", color: "var(--critical-red)", label: "Poor" },
+              { range: "301+", color: "#800000", label: "Severe" },
+            ].map((l) => (
+              <span key={l.range} className="inline-flex items-center gap-1.5">
+                <span
+                  className="inline-block w-3 h-3 rounded-full"
+                  style={{ background: l.color }}
+                />
+                <span style={{ color: "var(--text-primary)" }}>{l.range}</span>
+                <span style={{ color: "var(--text-muted)" }}>{l.label}</span>
+              </span>
+            ))}
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#F8FAFC" }}>
-                {[
-                  { field: "name" as SortField, label: "Station" },
-                  { field: "aqi" as SortField, label: "AQI" },
-                  { field: "pm25" as SortField, label: "PM2.5" },
-                  { field: "no2" as SortField, label: "NO₂" },
-                  { field: "co" as SortField, label: "CO" },
-                  { field: "o3" as SortField, label: "O₃" },
-                  { field: "updated" as SortField, label: "Updated" },
-                ].map(({ field, label }) => (
-                  <th
-                    key={field}
-                    className="text-left px-4 py-2.5 font-semibold cursor-pointer select-none whitespace-nowrap"
-                    style={{
-                      color: "var(--text-muted)",
-                      borderBottom: "1px solid #E2E8F0",
-                      fontSize: "11px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                    onClick={() => toggleSort(field)}
-                  >
-                    {label}{" "}
-                    <span className="text-[10px] opacity-60">{sortIcon(field)}</span>
-                  </th>
-                ))}
-                <th
-                  className="text-center px-4 py-2.5 font-semibold whitespace-nowrap"
-                  style={{
-                    color: "var(--text-muted)",
-                    borderBottom: "1px solid #E2E8F0",
-                    fontSize: "11px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedStations.map((s, i) => (
-                <tr
-                  key={s.id}
-                  style={{
-                    background: i % 2 === 0 ? "white" : "#FAFBFC",
-                    borderBottom: "1px solid #F1F5F9",
-                  }}
-                  className="hover:bg-blue-50/40 transition-colors"
-                >
-                  <td className="px-4 py-2.5 font-medium" style={{ color: "var(--navy)" }}>
-                    {s.name}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white font-mono"
-                      style={{ background: aqiColor(s.aqi) }}
+            <div className="w-px h-4 mx-2" style={{ background: "#E2E8F0" }} />
+
+            <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              Data Quality
+            </span>
+            {[
+              { color: "var(--safe-green)", label: "Live (<5m)" },
+              { color: "#FFC000", label: "Delayed" },
+              { color: "var(--critical-red)", label: "Offline" },
+            ].map((l) => (
+              <span key={l.label} className="inline-flex items-center gap-1.5">
+                <span
+                  className="inline-block w-2 h-2 rounded-full"
+                  style={{ background: l.color }}
+                />
+                <span style={{ color: "var(--text-muted)" }}>{l.label}</span>
+              </span>
+            ))}
+          </div>
+
+          {/* ── Station Comparison Table ── */}
+          <div
+            className="rounded-lg overflow-hidden flex-shrink-0"
+            style={{ background: "white", border: "1px solid #E2E8F0" }}
+          >
+            {/* Table Header */}
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid #E2E8F0" }}
+            >
+              <h3 className="text-base font-semibold" style={{ color: "var(--navy)" }}>
+                Station Comparison
+              </h3>
+              <button
+                onClick={exportCSV}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                style={{
+                  background: "#F1F5F9",
+                  color: "var(--text-primary)",
+                  border: "1px solid #E2E8F0",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--mid-blue)";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#F1F5F9";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#F8FAFC" }}>
+                    {[
+                      { field: "name" as SortField, label: "Station" },
+                      { field: "aqi" as SortField, label: "AQI" },
+                      { field: "pm25" as SortField, label: "PM2.5" },
+                      { field: "no2" as SortField, label: "NO₂" },
+                      { field: "co" as SortField, label: "CO" },
+                      { field: "o3" as SortField, label: "O₃" },
+                      { field: "updated" as SortField, label: "Updated" },
+                    ].map(({ field, label }) => (
+                      <th
+                        key={field}
+                        className="text-left px-4 py-2.5 font-semibold cursor-pointer select-none whitespace-nowrap"
+                        style={{
+                          color: "var(--text-muted)",
+                          borderBottom: "1px solid #E2E8F0",
+                          fontSize: "11px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                        onClick={() => toggleSort(field)}
+                      >
+                        {label}{" "}
+                        <span className="text-[10px] opacity-60">{sortIcon(field)}</span>
+                      </th>
+                    ))}
+                    <th
+                      className="text-center px-4 py-2.5 font-semibold whitespace-nowrap"
+                      style={{
+                        color: "var(--text-muted)",
+                        borderBottom: "1px solid #E2E8F0",
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
                     >
-                      {s.aqi}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
-                    {s.pm25 ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
-                    {s.no2 ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
-                    {s.co ?? "—"}
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
-                    {s.o3 ?? "—"}
-                  </td>
-                  <td
-                    className="px-4 py-2.5 font-mono text-xs"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {new Date(s.updated).toLocaleTimeString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
-                  </td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs">
-                      <span
-                        className="inline-block w-2 h-2 rounded-full"
-                        style={{ background: freshnessColor(s.minutesAgo) }}
-                      />
-                      <span style={{ color: "var(--text-muted)" }}>
-                        {freshnessLabel(s.minutesAgo)}
-                      </span>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedStations.map((s, i) => (
+                    <tr
+                      key={s.id}
+                      style={{
+                        background: i % 2 === 0 ? "white" : "#FAFBFC",
+                        borderBottom: "1px solid #F1F5F9",
+                      }}
+                      className="hover:bg-blue-50/40 transition-colors"
+                    >
+                      <td className="px-4 py-2.5 font-medium" style={{ color: "var(--navy)" }}>
+                        {s.name}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white font-mono"
+                          style={{ background: aqiColor(s.aqi) }}
+                        >
+                          {s.aqi}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
+                        {s.pm25 ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
+                        {s.no2 ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
+                        {s.co ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-sm" style={{ color: "var(--text-primary)" }}>
+                        {s.o3 ?? "—"}
+                      </td>
+                      <td
+                        className="px-4 py-2.5 font-mono text-xs"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {new Date(s.updated).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-xs">
+                          <span
+                            className="inline-block w-2 h-2 rounded-full"
+                            style={{ background: freshnessColor(s.minutesAgo) }}
+                          />
+                          <span style={{ color: "var(--text-muted)" }}>
+                            {freshnessLabel(s.minutesAgo)}
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Table Footer */}
-        <div
-          className="flex items-center justify-between px-5 py-2.5 text-xs"
-          style={{
-            background: "#F8FAFC",
-            borderTop: "1px solid #E2E8F0",
-            color: "var(--text-muted)",
-          }}
-        >
-          <span>
-            {sortedStations.length} stations ·{" "}
-            {timeRange === "now" ? "Real-time" : `Historical (${timeRange})`}
-          </span>
-          <span className="font-mono">
-            Avg AQI:{" "}
-            {Math.round(
-              sortedStations.reduce((sum, s) => sum + s.aqi, 0) / sortedStations.length
-            )}
-          </span>
-        </div>
-      </div>
+            {/* Table Footer */}
+            <div
+              className="flex items-center justify-between px-5 py-2.5 text-xs"
+              style={{
+                background: "#F8FAFC",
+                borderTop: "1px solid #E2E8F0",
+                color: "var(--text-muted)",
+              }}
+            >
+              <span>
+                {sortedStations.length} stations ·{" "}
+                {timeRange === "now" ? "Real-time" : `Historical (${timeRange})`}
+              </span>
+              <span className="font-mono">
+                Avg AQI:{" "}
+                {Math.round(
+                  sortedStations.reduce((sum, s) => sum + s.aqi, 0) / sortedStations.length
+                )}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

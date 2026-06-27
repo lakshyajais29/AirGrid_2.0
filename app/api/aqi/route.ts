@@ -14,11 +14,11 @@ const DELHI_STATIONS = [
 
 /* ── AQI color for map markers ── */
 function aqiColor(aqi: number): string {
-  if (aqi <= 50)  return "var(--safe-green)";
+  if (aqi <= 50)  return "#55A84F";
   if (aqi <= 100) return "#A8D08D";
   if (aqi <= 200) return "#FFC000";
-  if (aqi <= 300) return "var(--critical-red)";
-  return "#800000";
+  if (aqi <= 300) return "#E93F33";
+  return "#AF2D24";
 }
 
 /* ── Realistic mock data generator ── */

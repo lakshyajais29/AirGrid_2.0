@@ -2,165 +2,176 @@
 
 import React, { useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { HiMenu, HiMap, HiCloud, HiChartBar, HiUsers, HiDocumentText, HiAcademicCap, HiShieldCheck, HiCalendar, HiCog, HiFlag } from "react-icons/hi";
-import { RiFlightTakeoffLine, RiFileDownloadLine, RiHeartLine } from "react-icons/ri";
+import {
+  LayoutDashboard, MapPin, Building2,
+  Plane, AlertTriangle, Brain,
+  Wind, TrendingUp, BarChart3, GitBranch,
+  FileText, Factory, Heart, Settings,
+} from "lucide-react";
+
+const NAV_GROUPS = [
+  {
+    label: "Operations",
+    items: [
+      { name: "Command Centre",    href: "/",           icon: LayoutDashboard },
+      { name: "Pollution Grid",    href: "/pollution",  icon: MapPin          },
+      { name: "Ward Intelligence", href: "/wards",      icon: Building2       },
+    ],
+  },
+  {
+    label: "Enforcement",
+    items: [
+      { name: "Drone Operations",  href: "/flights",    icon: Plane           },
+      { name: "Alert Management",  href: "/alerts",     icon: AlertTriangle   },
+      { name: "AI Intelligence",   href: "/ai",         icon: Brain           },
+    ],
+  },
+  {
+    label: "Analysis",
+    items: [
+      { name: "Plume & Dispersion",  href: "/plume",       icon: Wind       },
+      { name: "Forecasting",         href: "/forecast",    icon: TrendingUp },
+      { name: "Temporal Analytics",  href: "/analytics",   icon: BarChart3  },
+      { name: "AQI Correlation",     href: "/correlation", icon: GitBranch  },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { name: "Reports & Export",    href: "/reports",   icon: FileText            },
+      { name: "Emission Estimator",  href: "/emissions", icon: Factory             },
+      { name: "Health Advisory",     href: "/health",    icon: Heart,   soon: true },
+      { name: "Administration",      href: "/admin",     icon: Settings, soon: true },
+    ],
+  },
+];
 
 const SidebarContent = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const searchParams = useSearchParams();
-  
-  if (searchParams.get("demo") === "true") {
-    return null;
-  }
 
-  const menuItems = [
-    { name: "Command Centre", href: "/", icon: <HiMenu /> },
-    { name: "Flight Corridor Monitor", href: "/flights", icon: <RiFlightTakeoffLine /> },
-    { name: "Pollution Grid", href: "/pollution", icon: <HiMap /> },
-    { name: "Flight-AQI Correlation", href: "/correlation", icon: <HiChartBar /> },
-    { name: "Ward & Zone Analysis", href: "/wards", icon: <HiUsers /> },
-    { name: "Emission Estimator", href: "/emissions", icon: <RiFileDownloadLine /> },
-    { name: "Plume & Dispersion", href: "/plume", icon: <HiCloud /> },
-    { name: "Temporal Analytics", href: "/analytics", icon: <HiAcademicCap /> },
-    { name: "AI Intelligence", href: "/ai", icon: <HiFlag /> },
-    { name: "Alert Management", href: "/alerts", icon: <HiShieldCheck /> },
-    { name: "Health Advisory", href: "/health", icon: <RiHeartLine /> },
-    { name: "Reports & Export", href: "/reports", icon: <HiDocumentText /> },
-    { name: "Forecasting", href: "/forecast", icon: <HiCalendar /> },
-    { name: "Administration", href: "/admin", icon: <HiCog /> },
-  ];
+  if (searchParams.get("demo") === "true") return null;
 
   return (
     <>
-      <div 
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 99,
-          background: "rgba(13,27,42,0.25)",
-          opacity: isOpen ? 1 : 0,
-          pointerEvents: isOpen ? "all" : "none",
-          transition: "opacity 0.28s"
-        }}
-        onClick={() => setIsOpen(false)}
-      />
-      
+      {isOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 98 }}
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       <nav
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
         style={{
-          position: "fixed",
-          left: 0,
-          top: "64px",
-          height: "calc(100vh - 64px)",
-          width: "240px",
-          zIndex: 100,
-          transform: isOpen ? "translateX(0)" : "translateX(-232px)",
-          transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
-          background: "linear-gradient(180deg, #0D1B2A 0%, #1A3A5C 100%)",
-          borderRight: "1px solid rgba(15,139,141,0.2)",
-          display: "flex",
+          position:   "fixed",
+          left:       0,
+          top:        "52px",
+          height:     "calc(100vh - 52px - 36px)",
+          width:      isOpen ? "240px" : "64px",
+          zIndex:     100,
+          transition: "width 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+          background: "linear-gradient(180deg, #0D1B2A 0%, #0f2035 100%)",
+          borderRight:"1px solid rgba(15,139,141,0.15)",
+          display:    "flex",
           flexDirection: "column",
+          overflow:   "hidden",
         }}
       >
-        {/* Grip indicator strip (always visible — the 8px trigger) */}
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            width: "8px",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            pointerEvents: "none",
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: "3px",
-                height: "20px",
-                background: "rgba(0,245,212,0.4)",
-                borderRadius: "2px",
-              }}
-            />
+        {/* Nav groups */}
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingTop: "12px", paddingBottom: "8px" }}>
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.label}>
+              {/* Group label — only readable when expanded */}
+              <div style={{ height: "26px", display: "flex", alignItems: "center", padding: "0 0 0 22px", marginTop: gi === 0 ? 0 : "6px" }}>
+                <span style={{
+                  fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em",
+                  textTransform: "uppercase", color: "rgba(255,255,255,0.22)",
+                  whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                  transition: "opacity 0.12s ease",
+                }}>
+                  {group.label}
+                </span>
+              </div>
+
+              {group.items.map((item) => {
+                const isActive  = pathname === item.href;
+                const Icon      = item.icon;
+                const isSoon    = "soon" in item && item.soon;
+
+                if (isSoon) {
+                  return (
+                    <div key={item.href} title={!isOpen ? item.name : undefined} style={{
+                      display: "flex", alignItems: "center", height: "40px",
+                      padding: "0 22px", gap: "14px", opacity: 0.28, cursor: "not-allowed", overflow: "hidden",
+                    }}>
+                      <Icon size={16} color="rgba(255,255,255,0.5)" style={{ flexShrink: 0 }} />
+                      <span style={{
+                        fontSize: "13px", color: "rgba(255,255,255,0.5)",
+                        whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                        transition: "opacity 0.1s ease",
+                      }}>
+                        {item.name}
+                      </span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    title={!isOpen ? item.name : undefined}
+                    style={{
+                      display: "flex", alignItems: "center", height: "40px",
+                      padding: "0 22px", gap: "14px", textDecoration: "none", overflow: "hidden",
+                      borderLeft: isActive ? "2px solid #0F8B8D" : "2px solid transparent",
+                      background:  isActive ? "rgba(15,139,141,0.10)" : "transparent",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                    onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <Icon size={16} color={isActive ? "#0F8B8D" : "rgba(255,255,255,0.5)"} style={{ flexShrink: 0 }} />
+                    <span style={{
+                      fontSize: "13px", fontWeight: isActive ? 600 : 400,
+                      color: isActive ? "#fff" : "rgba(255,255,255,0.62)",
+                      whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                      transition: "opacity 0.1s ease",
+                    }}>
+                      {item.name}
+                    </span>
+                  </a>
+                );
+              })}
+
+              {gi < NAV_GROUPS.length - 1 && (
+                <div style={{ height: "1px", margin: "8px 14px", background: "rgba(255,255,255,0.05)" }} />
+              )}
+            </div>
           ))}
         </div>
 
-        {/* AIRGRID OS brand at top */}
-        <div style={{ padding: "20px 16px 8px 16px" }}>
-          <div style={{
-            fontFamily: "monospace",
-            fontSize: "11px",
-            color: "#00f5d4",
-            letterSpacing: "0.2em",
-            fontWeight: "bold",
-            opacity: 0.8,
-          }}>
-            AIRGRID OS
-          </div>
-        </div>
-
-        {/* Nav items */}
-        <div style={{ flex: 1, overflowY: "auto", paddingTop: "8px" }}>
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            const isDisabled = item.href === "/health" || item.href === "/admin";
-
-            if (isDisabled) {
-              return (
-                <div
-                  key={item.href}
-                  style={{ opacity: 0.4, cursor: "not-allowed" }}
-                  className="flex items-center px-4 py-2 text-white border-l-4 border-transparent"
-                >
-                  <span className="mr-3 text-base">{item.icon}</span>
-                  <span className="flex-1 flex items-center justify-between text-sm">
-                    <span>{item.name}</span>
-                    <span style={{
-                      fontSize: "9px",
-                      background: "rgba(255,255,255,0.1)",
-                      padding: "1px 4px",
-                      borderRadius: "3px",
-                    }}>(soon)</span>
-                  </span>
-                </div>
-              );
-            }
-
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={`flex items-center px-4 py-2 text-sm transition-colors border-l-4 ${
-                  isActive
-                    ? "bg-[rgba(15,139,141,0.15)] border-[#0F8B8D] text-[#00f5d4]"
-                    : "text-white border-transparent hover:border-[#0F8B8D] hover:bg-[#1E5FA8]"
-                }`}
-              >
-                <span className="mr-3 text-base">{item.icon}</span>
-                <span>{item.name}</span>
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Bottom watermark */}
+        {/* Status footer — drones active */}
         <div style={{
-          padding: "12px 16px",
-          textAlign: "center",
-          fontSize: "10px",
-          color: "rgba(255,255,255,0.3)",
-          letterSpacing: "0.3em",
-          fontFamily: "monospace",
+          padding: "10px 22px", borderTop: "1px solid rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", gap: "10px", overflow: "hidden",
         }}>
-          AIRGRID OS
+          <div style={{
+            width: "7px", height: "7px", borderRadius: "50%",
+            background: "#16A34A", flexShrink: 0,
+            animation: "pulse-live 2s infinite",
+          }} />
+          <span style={{
+            fontSize: "10px", color: "rgba(255,255,255,0.32)",
+            fontFamily: "var(--font-mono)", whiteSpace: "nowrap",
+            opacity: isOpen ? 1 : 0, transition: "opacity 0.1s ease",
+            letterSpacing: "0.08em",
+          }}>
+            2 DRONES ACTIVE
+          </span>
         </div>
       </nav>
     </>
@@ -169,7 +180,9 @@ const SidebarContent = () => {
 
 export default function Sidebar() {
   return (
-    <Suspense fallback={<div className="w-16 h-full bg-[#0D1B2A] border-r border-[#1e293b]" />}>
+    <Suspense fallback={
+      <div style={{ width: "64px", flexShrink: 0, background: "#0D1B2A", borderRight: "1px solid rgba(15,139,141,0.15)" }} />
+    }>
       <SidebarContent />
     </Suspense>
   );

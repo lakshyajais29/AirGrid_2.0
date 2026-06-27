@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIRGRID OS | Delhi Air Quality Command Centre",
-  description: "Ward-level air quality monitoring for Delhi — live data across 272 wards, 46 CPCB stations.",
+  title: "AIRGRID OS | Environmental Intelligence & Enforcement",
+  description: "Government-grade environmental intelligence and enforcement operating system for NCT Delhi.",
 };
 
 export const viewport: Viewport = {
@@ -28,24 +28,44 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      style={{ height: "100%" }}
     >
-      <body className="h-full min-h-full flex flex-col antialiased">
+      <body style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        margin: 0,
+        padding: 0,
+      }}>
         <Suspense fallback={null}>
           <DemoModeBanner />
         </Suspense>
         <LoadingScreen />
         <Header />
-        <div className="flex flex-1 overflow-hidden">
+
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+          {/* 64px sidebar spacer — nav is position:fixed, this reserves the space */}
+          <div style={{ width: "64px", flexShrink: 0 }} />
           <Sidebar />
-          <main className="flex-1 overflow-auto p-4 ml-2">{children}</main>
+
+          <main style={{
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            minWidth: 0,
+          }}>
+            {children}
+          </main>
         </div>
+
         <Footer />
       </body>
     </html>
