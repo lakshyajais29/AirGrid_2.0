@@ -5,7 +5,7 @@ import { DailySituationReport } from "@/components/ai/DailySituationReport";
 import { AnomalyExplainer } from "@/components/ai/AnomalyExplainer";
 import { NaturalLanguageQuery } from "@/components/ai/NaturalLanguageQuery";
 import { PolicyRecommendationPanel } from "@/components/ai/PolicyRecommendationPanel";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Download } from "lucide-react";
 
 export default function AIPage() {
   return (

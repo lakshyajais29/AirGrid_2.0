@@ -3,6 +3,8 @@
 import React from "react";
 import { ReportBuilderForm } from "@/components/reports/ReportBuilderForm";
 
+import { FileText, ShieldCheck, Download } from "lucide-react";
+
 export default function ReportsPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 min-h-screen no-print">
@@ -49,9 +51,9 @@ export default function ReportsPage() {
       {/* Info cards */}
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
         {[
-          { icon: "📄", label: "6-Page Report",   desc: "Cover · Summary · Alerts · Sources · Actions · Sign-off" },
-          { icon: "🔒", label: "Official Format",  desc: "DMC letterhead · Confidential classification stamp" },
-          { icon: "⬇",  label: "PDF Export",       desc: "High-resolution A4 PDF via jsPDF + html2canvas" },
+          { icon: <FileText size={22} />, label: "6-Page Report",   desc: "Cover · Summary · Alerts · Sources · Actions · Sign-off" },
+          { icon: <ShieldCheck size={22} />, label: "Official Format",  desc: "DMC letterhead · Confidential classification stamp" },
+          { icon: <Download size={22} />,  label: "PDF Export",       desc: "High-resolution A4 PDF via jsPDF + html2canvas" },
         ].map(({ icon, label, desc }) => (
           <div
             key={label}
@@ -67,7 +69,7 @@ export default function ReportsPage() {
               boxShadow: "0 1px 4px rgba(13,27,42,0.05)",
             }}
           >
-            <span style={{ fontSize: "22px", flexShrink: 0 }}>{icon}</span>
+            <span style={{ flexShrink: 0, color: "#0F8B8D", display: "flex", alignItems: "center" }}>{icon}</span>
             <div>
               <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "13px", marginBottom: "2px" }}>{label}</div>
               <div style={{ fontSize: "11px", color: "#8A9BB0", lineHeight: 1.5 }}>{desc}</div>

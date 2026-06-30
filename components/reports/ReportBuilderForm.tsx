@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { ReportDocument } from "./ReportDocument";
+import { FileText, Download } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -181,7 +182,7 @@ export function ReportBuilderForm({ onGenerate }: { onGenerate?: () => void }) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(13,27,42,0.35)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 14px rgba(13,27,42,0.25)"; }}
           >
-            <span style={{ fontSize: "18px" }}>📄</span>
+            <FileText size={18} />
             Generate Report &amp; Preview
           </button>
 
@@ -204,7 +205,7 @@ export function ReportBuilderForm({ onGenerate }: { onGenerate?: () => void }) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#0F8B8D"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2E8F0"; }}
           >
-            ⬇ Bulk CSV Export
+            <Download size={16} /> Bulk CSV Export
           </button>
         </div>
       </div>
@@ -260,30 +261,9 @@ export function ReportBuilderForm({ onGenerate }: { onGenerate?: () => void }) {
                 </div>
               </div>
 
-              {/* Period selector */}
+              {/* Period selector removed */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "10px", padding: "4px" }}>
-                  {(Object.entries(PERIOD_LABELS) as [ReportPeriod, string][]).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setPeriod(key)}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: "7px",
-                        border: "none",
-                        background: period === key ? "#0F8B8D" : "transparent",
-                        color: period === key ? "white" : "rgba(255,255,255,0.6)",
-                        fontWeight: 600,
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+
 
                 <button
                   onClick={() => setShowModal(false)}
@@ -336,7 +316,6 @@ export function ReportBuilderForm({ onGenerate }: { onGenerate?: () => void }) {
             >
               <div style={{ fontSize: "12px", color: "#8A9BB0", fontFamily: "monospace" }}>
                 Report ID: <strong style={{ color: "#1C2B3A" }}>{reportId}</strong>
-                {" · "}Period: <strong style={{ color: "#1C2B3A" }}>{PERIOD_LABELS[period]}</strong>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plane } from "lucide-react";
+import { Plane, Settings, MapPin, Radio, CloudSun, Factory, Satellite } from "lucide-react";
 import type { ReportPeriod } from "./ReportBuilderForm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ export function ReportDocument({ period, reportId }: Props) {
               justifyContent: "center",
             }}
           >
-            <div style={{ fontSize: "22px", marginBottom: "2px" }}>⚙</div>
+            <div style={{ marginBottom: "2px", color: "#0D1B2A", display: "flex" }}><Settings size={22} /></div>
             <div style={{ fontSize: "7px", fontWeight: 800, letterSpacing: "0.1em", color: "#0D1B2A", textAlign: "center", lineHeight: 1.2 }}>
               DELHI<br />GOVT.
             </div>
@@ -634,7 +634,7 @@ export function ReportDocument({ period, reportId }: Props) {
                 marginBottom: "12px",
               }}
             >
-              <div style={{ fontSize: "12px", fontWeight: 800, color: "#0D1B2A", marginBottom: "10px" }}>📍 {w.ward}</div>
+              <div style={{ fontSize: "12px", fontWeight: 800, color: "#0D1B2A", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><MapPin size={16} /> {w.ward}</div>
               {w.bars.map((b) => (
                 <div key={b.l} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
                   <div style={{ width: "100px", fontSize: "10px", fontWeight: 600, color: "#4A5568", flexShrink: 0 }}>{b.l}</div>
@@ -745,10 +745,10 @@ export function ReportDocument({ period, reportId }: Props) {
           {/* Data sources */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "28px" }}>
             {[
-              { name: "WAQI Network",        desc: "Ground-level air quality sensors — 47 stations active",     icon: "📡" },
-              { name: "OpenWeatherMap API",   desc: "Meteorological data — wind, temperature, humidity",         icon: "🌤" },
-              { name: "Ground Sensor Array",  desc: "Delhi Pollution Control Committee — real-time feeds",       icon: "🏭" },
-              { name: "Sentinel-5P Satellite", desc: "ESA satellite imagery — NO₂, SO₂, CO column data",        icon: "🛰" },
+              { name: "WAQI Network",        desc: "Ground-level air quality sensors — 47 stations active",     icon: <Radio size={20} /> },
+              { name: "OpenWeatherMap API",   desc: "Meteorological data — wind, temperature, humidity",         icon: <CloudSun size={20} /> },
+              { name: "Ground Sensor Array",  desc: "Delhi Pollution Control Committee — real-time feeds",       icon: <Factory size={20} /> },
+              { name: "Sentinel-5P Satellite", desc: "ESA satellite imagery — NO₂, SO₂, CO column data",        icon: <Satellite size={20} /> },
             ].map((s) => (
               <div
                 key={s.name}
@@ -762,7 +762,7 @@ export function ReportDocument({ period, reportId }: Props) {
                   alignItems: "flex-start",
                 }}
               >
-                <span style={{ fontSize: "20px", flexShrink: 0 }}>{s.icon}</span>
+                <span style={{ flexShrink: 0, color: "#0F8B8D" }}>{s.icon}</span>
                 <div>
                   <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "12px", marginBottom: "3px" }}>{s.name}</div>
                   <div style={{ color: "#8A9BB0", fontSize: "10px", lineHeight: 1.5 }}>{s.desc}</div>

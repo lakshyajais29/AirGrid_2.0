@@ -40,6 +40,7 @@ const CircleMarker  = dynamic(() => import("react-leaflet").then(m => m.CircleMa
 const Circle        = dynamic(() => import("react-leaflet").then(m => m.Circle),        { ssr: false })
 const Popup         = dynamic(() => import("react-leaflet").then(m => m.Popup),         { ssr: false })
 const Polyline      = dynamic(() => import("react-leaflet").then(m => m.Polyline),      { ssr: false })
+const Polygon       = dynamic(() => import("react-leaflet").then(m => m.Polygon),       { ssr: false })
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -465,23 +466,37 @@ function DroneMapInner({ allPoints, visiblePoints, isReplaying, hotspots, showHe
       })}
 
       {showHotspots && physicalSources.map((src, i) => (
-        <Marker
-          key={`ps-${i}`}
-          position={[src.lat, src.lng]}
-          icon={L.divIcon({ html: renderToStaticMarkup(<div style={{ background: "var(--surface)", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid #0f172a`, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}><SourceIcon id={src.type} size={14} color="#0f172a" /></div>), className: "", iconSize: [28, 28], iconAnchor: [14, 14] })}
-        >
-          <Popup>
-            <div style={{ fontFamily: "sans-serif", fontSize: 13, minWidth: 160 }}>
-              <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>{src.name}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "capitalize", marginBottom: 8 }}>Identified Physical Source</div>
-              {Object.entries(src.tags).slice(0, 3).map(([k, v]) => (
-                <div key={k} style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
-                  <strong style={{ color: "var(--text-primary)" }}>{k}:</strong> {v as string}
-                </div>
-              ))}
-            </div>
-          </Popup>
-        </Marker>
+        <React.Fragment key={`ps-frag-${i}`}>
+          {src.geometry && src.geometry.length > 1 && (
+            ["traffic"].includes(src.type) ? (
+              <Polyline
+                positions={src.geometry.map(pt => [pt.lat, pt.lng] as [number, number])}
+                pathOptions={{ color: (src as any).color || "#ef4444", weight: 6, opacity: 0.7 }}
+              />
+            ) : (
+              <Polygon
+                positions={src.geometry.map(pt => [pt.lat, pt.lng] as [number, number])}
+                pathOptions={{ color: (src as any).color || "#ef4444", fillColor: (src as any).color || "#ef4444", fillOpacity: 0.3, weight: 2 }}
+              />
+            )
+          )}
+          <Marker
+            position={[src.lat, src.lng]}
+            icon={L.divIcon({ html: renderToStaticMarkup(<div style={{ background: "var(--surface)", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid #0f172a`, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}><SourceIcon id={src.type} size={14} color="#0f172a" /></div>), className: "", iconSize: [28, 28], iconAnchor: [14, 14] })}
+          >
+            <Popup>
+              <div style={{ fontFamily: "sans-serif", fontSize: 13, minWidth: 160 }}>
+                <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>{src.name}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "capitalize", marginBottom: 8 }}>Identified Physical Source</div>
+                {Object.entries(src.tags).slice(0, 3).map(([k, v]) => (
+                  <div key={k} style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
+                    <strong style={{ color: "var(--text-primary)" }}>{k}:</strong> {v as string}
+                  </div>
+                ))}
+              </div>
+            </Popup>
+          </Marker>
+        </React.Fragment>
       ))}
 
       <CircleMarker
@@ -715,7 +730,9 @@ export const LiveFlightMonitor: React.FC = () => {
         const predictionId = h.analysis.top3[0].id
         const sources = await queryPhysicalSource(h.lat, h.lng, predictionId, searchRadius)
         if (sources.length > 0) {
-           allSources.push(sources[0])
+           const color = h.analysis.top3[0].color
+           sources.forEach(s => (s as any).color = color)
+           allSources.push(...sources.slice(0, 5))
         }
       }
       setPhysicalSources(allSources)

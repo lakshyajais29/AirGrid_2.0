@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Download, MapPin, Plane } from "lucide-react";
+import { X, MapPin, Plane, HardHat, Flame, CarFront, Factory, Wind, Zap, GraduationCap, Building2, Home, Bot } from "lucide-react";
 
 /* ── Shared incident data shape ── */
 export interface IncidentData {
@@ -19,13 +19,13 @@ export interface IncidentData {
 }
 
 /* ── Source display config ── */
-const SOURCE_META: Record<string, { emoji: string; simple: string }> = {
-  "Construction Dust": { emoji: "🏗️", simple: "Building work nearby"     },
-  "Open Burning":      { emoji: "🔥", simple: "Something is being burned" },
-  "Vehicular":         { emoji: "🚗", simple: "Too many vehicles"         },
-  "Industrial":        { emoji: "🏭", simple: "Factory emissions"         },
-  "Road Dust":         { emoji: "🛣️", simple: "Dust from roads"          },
-  "DG Set":            { emoji: "⚡", simple: "Diesel generators running" },
+const SOURCE_META: Record<string, { icon: React.ReactNode; simple: string }> = {
+  "Construction Dust": { icon: <HardHat size={32} color="currentColor" />, simple: "Building work nearby"     },
+  "Open Burning":      { icon: <Flame size={32} color="currentColor" />,   simple: "Something is being burned" },
+  "Vehicular":         { icon: <CarFront size={32} color="currentColor" />,simple: "Too many vehicles"         },
+  "Industrial":        { icon: <Factory size={32} color="currentColor" />, simple: "Factory emissions"         },
+  "Road Dust":         { icon: <Wind size={32} color="currentColor" />,    simple: "Dust from roads"          },
+  "DG Set":            { icon: <Zap size={32} color="currentColor" />,     simple: "Diesel generators running" },
 };
 
 /* ── Departments per source ── */
@@ -47,7 +47,11 @@ const NEARBY: Record<string, Array<{ name: string; type: "school"|"hospital"|"re
   "Jahangirpuri": [{ name: "JJ Colony School",        type: "school",      dist: "0.5 km" }, { name: "Sec-22 Residential",   type: "residential", dist: "0.3 km" }],
 };
 
-const PLACE_EMOJI = { school: "🏫", hospital: "🏥", residential: "🏘️" } as const;
+const PLACE_ICON: Record<string, React.ReactNode> = { 
+  school: <GraduationCap size={16} />, 
+  hospital: <Building2 size={16} />, 
+  residential: <Home size={16} /> 
+};
 
 /* ── AQI helpers ── */
 function aqiColor(aqi: number) {
@@ -59,11 +63,11 @@ function aqiColor(aqi: number) {
 }
 
 function aqiLabel(aqi: number) {
-  if (aqi > 400) return { word: "EMERGENCY 🔴",  sub: "Stay indoors. Do not go outside."         };
-  if (aqi > 300) return { word: "VERY BAD 🟠",   sub: "Children & elderly must stay indoors."    };
-  if (aqi > 200) return { word: "BAD 🟡",         sub: "Avoid outdoor activity. Wear mask."       };
-  if (aqi > 100) return { word: "CAUTION 🟡",     sub: "Sensitive people should be careful."      };
-  return               { word: "OK 🟢",            sub: "Air quality is acceptable."               };
+  if (aqi > 400) return { word: "EMERGENCY",  sub: "Stay indoors. Do not go outside."         };
+  if (aqi > 300) return { word: "VERY BAD",   sub: "Children & elderly must stay indoors."    };
+  if (aqi > 200) return { word: "BAD",         sub: "Avoid outdoor activity. Wear mask."       };
+  if (aqi > 100) return { word: "CAUTION",     sub: "Sensitive people should be careful."      };
+  return               { word: "OK",            sub: "Air quality is acceptable."               };
 }
 
 function aiSureWord(conf: number) {
@@ -85,7 +89,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
 
   const color   = aqiColor(data.aqi);
   const label   = aqiLabel(data.aqi);
-  const meta    = SOURCE_META[data.source] ?? { emoji: "📍", simple: "Unknown source" };
+  const meta    = SOURCE_META[data.source] ?? { icon: <MapPin size={32} color="currentColor" />, simple: "Unknown source" };
   const depts   = DISPATCH_DEPTS[data.source] ?? ["DPCC", "MCD"];
   const nearby  = NEARBY[data.ward] ?? [];
 
@@ -168,7 +172,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
             textAlign: "center",
             marginBottom: "12px",
           }}>
-            <div style={{ fontSize: "40px", lineHeight: 1, marginBottom: "6px" }}>{meta.emoji}</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color }}>{meta.icon}</div>
             <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--text-primary)", marginBottom: "2px" }}>
               {data.source}
             </div>
@@ -202,7 +206,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
             padding: "10px 12px", marginBottom: "12px",
             display: "flex", alignItems: "center", gap: "10px",
           }}>
-            <span style={{ fontSize: "22px" }}>🤖</span>
+            <Bot size={22} color="var(--text-secondary)" />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>
                 AI is {aiSureWord(data.confidence)}
@@ -277,7 +281,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
           {nearby.length > 0 && (
             <div style={{ marginBottom: "12px" }}>
               <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px" }}>
-                ⚠️ Nearby Schools & Hospitals
+                Nearby Schools & Hospitals
               </div>
               {nearby.map(loc => (
                 <div key={loc.name} style={{
@@ -286,7 +290,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
                   background: "#FFF7ED", borderRadius: "9px",
                   border: "1px solid #FDE68A",
                 }}>
-                  <span style={{ fontSize: "20px", lineHeight: 1 }}>{PLACE_EMOJI[loc.type]}</span>
+                  <span style={{ display: "flex", alignItems: "center", color: "#D97706" }}>{PLACE_ICON[loc.type]}</span>
                   <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{loc.name}</span>
                   <span style={{ fontSize: "12px", fontWeight: 700, color: "#D97706" }}>{loc.dist}</span>
                 </div>
@@ -328,29 +332,12 @@ export function IncidentDrawer({ data, onClose }: Props) {
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
           >
-            🚨 SEND ENFORCEMENT TEAM NOW
+            SEND ENFORCEMENT TEAM NOW
           </button>
 
           <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
             Notifying: {depts.join(" + ")}
           </div>
-
-          {/* ── Evidence download ── */}
-          <button
-            style={{
-              width: "100%", padding: "10px",
-              background: "var(--surface-alt)", color: "var(--text-secondary)",
-              border: "1px solid var(--border-faint)", borderRadius: "10px",
-              fontSize: "12px", fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              transition: "background 0.12s",
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-alt)"; }}
-          >
-            <Download size={13} />
-            Download Proof Package (PDF)
-          </button>
         </div>
       </div>
     </>
