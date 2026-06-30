@@ -41,6 +41,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       style={{ height: "100%" }}
     >
+      <head>
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: ANTI_FLASH }} />
+      </head>
       <body style={{
         height: "100vh",
         display: "flex",
@@ -49,9 +52,6 @@ export default function RootLayout({
         margin: 0,
         padding: 0,
       }}>
-        {/* Anti-flash: must be the very first child of <body> */}
-        <Script id="anti-flash" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ANTI_FLASH }} />
-
         <ThemeProvider>
           <Suspense fallback={null}>
             <DemoModeBanner />
