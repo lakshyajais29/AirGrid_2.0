@@ -27,7 +27,7 @@ Officer Query: "${query}"`;
         try {
           for await (const chunk of stream) {
             const content = chunk.data.choices[0]?.delta?.content;
-            if (content) controller.enqueue(encoder.encode(content));
+            if (typeof content === "string") controller.enqueue(encoder.encode(content));
           }
           controller.close();
         } catch (e) {
