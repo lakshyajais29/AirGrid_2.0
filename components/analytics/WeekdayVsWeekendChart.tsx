@@ -24,7 +24,7 @@ export function WeekdayVsWeekendChart() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="type" tick={{ fontFamily: 'var(--font-sans)', fontSize: 12 }} />
               <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
-              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-faint)', color: 'var(--text-primary)', borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
               <Bar dataKey="AQI" fill="var(--navy)" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

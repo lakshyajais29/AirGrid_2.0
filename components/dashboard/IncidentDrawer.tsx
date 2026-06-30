@@ -119,7 +119,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
         bottom:     "36px",
         width:      "360px",
         zIndex:     901,
-        background: "#ffffff",
+        background: "var(--surface)",
         boxShadow:  "-6px 0 28px rgba(13,27,42,0.18)",
         display:    "flex",
         flexDirection: "column",
@@ -133,21 +133,21 @@ export function IncidentDrawer({ data, onClose }: Props) {
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "13px 16px",
           borderBottom: "1px solid rgba(13,27,42,0.07)",
-          flexShrink: 0, background: "#FAFBFC",
+          flexShrink: 0, background: "var(--surface-alt)",
         }}>
           <div>
-            <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF" }}>
+            <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)" }}>
               Incident Report
             </div>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", marginTop: "1px" }}>
               {data.ward}
-              <span style={{ fontWeight: 400, color: "#6B7280", fontSize: "12px" }}> · {data.zone}</span>
+              <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: "12px" }}> · {data.zone}</span>
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: "#F1F5F9", border: "none", borderRadius: "50%",
+              background: "var(--surface-alt)", border: "none", borderRadius: "50%",
               width: "30px", height: "30px", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
@@ -169,10 +169,10 @@ export function IncidentDrawer({ data, onClose }: Props) {
             marginBottom: "12px",
           }}>
             <div style={{ fontSize: "40px", lineHeight: 1, marginBottom: "6px" }}>{meta.emoji}</div>
-            <div style={{ fontSize: "14px", fontWeight: 800, color: "#1F2937", marginBottom: "2px" }}>
+            <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--text-primary)", marginBottom: "2px" }}>
               {data.source}
             </div>
-            <div style={{ fontSize: "11px", color: "#6B7280", marginBottom: "14px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "14px" }}>
               {meta.simple}
             </div>
 
@@ -181,7 +181,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
               {data.aqi}
             </div>
             <div style={{ marginTop: "8px", fontSize: "15px", fontWeight: 800, color }}>{label.word}</div>
-            <div style={{ fontSize: "11px", color: "#6B7280", marginTop: "4px" }}>{label.sub}</div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{label.sub}</div>
 
             {/* 24h trend */}
             <div style={{
@@ -198,16 +198,16 @@ export function IncidentDrawer({ data, onClose }: Props) {
 
           {/* ── AI Confidence ── */}
           <div style={{
-            background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0",
+            background: "var(--surface-alt)", borderRadius: "10px", border: "1px solid var(--border-faint)",
             padding: "10px 12px", marginBottom: "12px",
             display: "flex", alignItems: "center", gap: "10px",
           }}>
             <span style={{ fontSize: "22px" }}>🤖</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "#1F2937" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>
                 AI is {aiSureWord(data.confidence)}
               </div>
-              <div style={{ fontSize: "10px", color: "#6B7280", marginTop: "1px" }}>
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "1px" }}>
                 {data.confidence}% sure this is {data.source}
               </div>
             </div>
@@ -230,7 +230,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
 
           {/* ── What's in the air ── */}
           <div style={{ marginBottom: "12px" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6B7280", marginBottom: "10px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "10px" }}>
               What's in the air right now?
             </div>
 
@@ -242,14 +242,14 @@ export function IncidentDrawer({ data, onClose }: Props) {
               <div key={row.label} style={{ marginBottom: "9px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                   <div>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#1F2937" }}>{row.label}</span>
-                    <span style={{ fontSize: "10px", color: "#9CA3AF", marginLeft: "4px" }}>({row.hint})</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{row.label}</span>
+                    <span style={{ fontSize: "10px", color: "var(--text-muted)", marginLeft: "4px" }}>({row.hint})</span>
                   </div>
                   <span style={{ fontSize: "12px", fontWeight: 700, fontFamily: "var(--font-mono)", color: barColor(row.pct) }}>
                     {row.value} {row.unit}
                   </span>
                 </div>
-                <div style={{ background: "#F1F5F9", borderRadius: "4px", height: "7px", overflow: "hidden" }}>
+                <div style={{ background: "var(--surface-alt)", borderRadius: "4px", height: "7px", overflow: "hidden" }}>
                   <div style={{ width: `${row.pct}%`, height: "100%", background: barColor(row.pct), borderRadius: "4px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                 </div>
               </div>
@@ -265,8 +265,8 @@ export function IncidentDrawer({ data, onClose }: Props) {
           }}>
             <Plane size={18} color="#0F8B8D" />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>Drone is watching this area</div>
-              <div style={{ fontSize: "10px", color: "#6B7280", marginTop: "2px" }}>AG-01 · Last scan: 4 minutes ago</div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>Drone is watching this area</div>
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>AG-01 · Last scan: 4 minutes ago</div>
             </div>
             <span style={{ fontSize: "9px", fontWeight: 700, color: "#0F8B8D", background: "rgba(15,139,141,0.12)", padding: "2px 8px", borderRadius: "20px" }}>
               LIVE
@@ -276,7 +276,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
           {/* ── Nearby sensitive places ── */}
           {nearby.length > 0 && (
             <div style={{ marginBottom: "12px" }}>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#6B7280", marginBottom: "8px" }}>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px" }}>
                 ⚠️ Nearby Schools & Hospitals
               </div>
               {nearby.map(loc => (
@@ -287,7 +287,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
                   border: "1px solid #FDE68A",
                 }}>
                   <span style={{ fontSize: "20px", lineHeight: 1 }}>{PLACE_EMOJI[loc.type]}</span>
-                  <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: "#1F2937" }}>{loc.name}</span>
+                  <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{loc.name}</span>
                   <span style={{ fontSize: "12px", fontWeight: 700, color: "#D97706" }}>{loc.dist}</span>
                 </div>
               ))}
@@ -301,12 +301,12 @@ export function IncidentDrawer({ data, onClose }: Props) {
             style={{
               display: "flex", alignItems: "center", gap: "8px",
               padding: "9px 12px", marginBottom: "14px",
-              background: "#F8FAFC", borderRadius: "9px",
-              border: "1px solid #E2E8F0", textDecoration: "none",
+              background: "var(--surface-alt)", borderRadius: "9px",
+              border: "1px solid var(--border-faint)", textDecoration: "none",
             }}
           >
             <MapPin size={13} color="#9CA3AF" />
-            <span style={{ flex: 1, fontSize: "11px", fontFamily: "var(--font-mono)", color: "#6B7280" }}>
+            <span style={{ flex: 1, fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
               {data.lat.toFixed(4)}°N, {data.lng.toFixed(4)}°E
             </span>
             <span style={{ fontSize: "11px", fontWeight: 600, color: "#0F8B8D" }}>Open Maps →</span>
@@ -331,7 +331,7 @@ export function IncidentDrawer({ data, onClose }: Props) {
             🚨 SEND ENFORCEMENT TEAM NOW
           </button>
 
-          <div style={{ textAlign: "center", fontSize: "11px", color: "#9CA3AF", marginBottom: "12px" }}>
+          <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
             Notifying: {depts.join(" + ")}
           </div>
 
@@ -339,14 +339,14 @@ export function IncidentDrawer({ data, onClose }: Props) {
           <button
             style={{
               width: "100%", padding: "10px",
-              background: "#F8FAFC", color: "#374151",
-              border: "1px solid #E2E8F0", borderRadius: "10px",
+              background: "var(--surface-alt)", color: "var(--text-secondary)",
+              border: "1px solid var(--border-faint)", borderRadius: "10px",
               fontSize: "12px", fontWeight: 600, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
               transition: "background 0.12s",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F1F5F9"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#F8FAFC"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-alt)"; }}
           >
             <Download size={13} />
             Download Proof Package (PDF)

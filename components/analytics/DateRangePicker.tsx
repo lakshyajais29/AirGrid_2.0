@@ -48,7 +48,7 @@ export function DateRangePicker() {
               <Button 
                 key={preset}
                 variant={selectedRange === preset ? "primary" : "ghost"}
-                className={`justify-start rounded-sm h-8 px-3 ${selectedRange === preset ? 'bg-[var(--navy)] text-white' : 'text-slate-700'}`}
+                className={`justify-start rounded-sm h-8 px-3 ${selectedRange === preset ? 'bg-slate-900 text-white' : 'text-slate-700'}`}
                 onClick={() => { setPreset(preset); setIsOpen(false); }}
               >
                 {preset === "Today" ? "Today" : `Last ${preset}`}

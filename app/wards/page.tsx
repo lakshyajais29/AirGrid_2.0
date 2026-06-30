@@ -84,14 +84,14 @@ function ZoneCard({ zone, station, isSelected, onClick }: {
         borderRadius: "12px",
         padding: "16px",
         cursor: "pointer",
-        background: isSelected ? `${color}08` : "white",
+        background: isSelected ? `${color}08` : "var(--surface)",
         transition: "all 0.2s",
         boxShadow: isSelected ? `0 4px 20px ${color}30` : "0 1px 4px rgba(13,27,42,0.06)",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "14px" }}>{zone.name}</div>
+          <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "14px" }}>{zone.name}</div>
           <div style={{ fontSize: "11px", color: "#8A9BB0", marginTop: "2px" }}>{zone.zone}</div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -168,7 +168,7 @@ export default function WardsPage() {
     <div style={{
       backgroundImage: "radial-gradient(circle, #c8d6e8 1px, transparent 1px)",
       backgroundSize: "28px 28px",
-      backgroundColor: "#F4F6FA",
+      backgroundColor: "var(--page-bg)",
       minHeight: "100vh",
       padding: "28px",
     }}>
@@ -218,9 +218,9 @@ export default function WardsPage() {
                 <button key={k} onClick={() => setSortBy(k)} style={{
                   padding: "5px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 600,
                   border: "1px solid",
-                  borderColor: sortBy === k ? "#0D1B2A" : "#E2E8F0",
-                  background: sortBy === k ? "#0D1B2A" : "white",
-                  color: sortBy === k ? "white" : "#8A9BB0",
+                  borderColor: sortBy === k ? "var(--text-primary)" : "var(--border-faint)",
+                  background: sortBy === k ? "var(--text-primary)" : "var(--surface)",
+                  color: sortBy === k ? "var(--page-bg)" : "var(--text-muted)",
                   cursor: "pointer",
                 }}>
                   {k === "aqi" ? "AQI" : k === "exposure" ? "Aviation Exposure" : "Name"}
@@ -247,7 +247,7 @@ export default function WardsPage() {
             </div>
 
             {/* Zone comparison table */}
-            <div style={{ marginTop: "24px", background: "white", borderRadius: "14px", border: "1px solid #E2E8F0", overflow: "hidden" }}>
+            <div style={{ marginTop: "24px", background: "var(--surface)", borderRadius: "14px", border: "1px solid var(--border-faint)", overflow: "hidden" }}>
               <div style={{ background: "linear-gradient(90deg, #0D1B2A, #1A3A5C)", padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ color: "#C9A84C", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase" }}>Aviation Impact Rankings</div>
@@ -282,14 +282,14 @@ export default function WardsPage() {
                           key={zone.id}
                           onClick={() => setSelectedZone(z => z?.id === zone.id ? null : zone)}
                           style={{
-                            background: selectedZone?.id === zone.id ? "#EFF6FF" : i % 2 === 0 ? "white" : "#FAFBFF",
-                            borderBottom: "1px solid #F1F5F9",
+                            background: selectedZone?.id === zone.id ? "var(--accent-light)" : i % 2 === 0 ? "var(--surface)" : "var(--surface-alt)",
+                            borderBottom: "1px solid var(--border-faint)",
                             cursor: "pointer",
                             borderLeft: `4px solid ${color}`,
                           }}
                         >
                           <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "#8A9BB0", fontSize: "12px" }}>#{i + 1}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#0D1B2A" }}>{zone.name}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-primary)" }}>{zone.name}</td>
                           <td style={{ padding: "10px 14px", color: "#8A9BB0", fontSize: "12px" }}>{zone.zone}</td>
                           <td style={{ padding: "10px 14px", textAlign: "right" }}>
                             <span style={{ fontFamily: "monospace", fontWeight: 800, color, background: `${color}15`, padding: "2px 10px", borderRadius: "12px" }}>{aqi || "—"}</span>
@@ -322,17 +322,17 @@ export default function WardsPage() {
           <div style={{ position: "sticky", top: "16px" }}>
             {!selectedZone ? (
               <div style={{
-                background: "white", borderRadius: "14px", border: "1px solid #E2E8F0",
+                background: "var(--surface)", borderRadius: "14px", border: "1px solid var(--border-faint)",
                 padding: "40px 24px", textAlign: "center",
               }}>
                 <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}><Map size={40} color="#8A9BB0" /></div>
-                <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "16px" }}>Select a Zone</div>
+                <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "16px" }}>Select a Zone</div>
                 <div style={{ color: "#8A9BB0", fontSize: "13px", marginTop: "6px" }}>
                   Click any zone card or table row to view detailed pollution analysis and drone recommendations.
                 </div>
               </div>
             ) : (
-              <div style={{ background: "white", borderRadius: "14px", border: "1px solid #E2E8F0", overflow: "hidden" }}>
+              <div style={{ background: "var(--surface)", borderRadius: "14px", border: "1px solid var(--border-faint)", overflow: "hidden" }}>
                 {/* Panel header */}
                 <div style={{
                   background: `linear-gradient(135deg, #0D1B2A, #1A3A5C)`,
@@ -388,7 +388,7 @@ export default function WardsPage() {
                       <div key={p.label} style={{ marginBottom: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#4A5568", marginBottom: "4px" }}>
                           <span>{p.label}</span>
-                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#0D1B2A" }}>{p.value ?? "—"}</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--text-primary)" }}>{p.value ?? "—"}</span>
                         </div>
                         {p.value != null && (
                           <div style={{ height: "5px", background: "#F1F5F9", borderRadius: "3px", overflow: "hidden" }}>
@@ -408,7 +408,7 @@ export default function WardsPage() {
                     ].map(([k, v]) => (
                       <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #E2E8F0" }}>
                         <span style={{ color: "#8A9BB0" }}>{k}</span>
-                        <span style={{ fontWeight: 600, color: "#0D1B2A" }}>{v}</span>
+                        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{v}</span>
                       </div>
                     ))}
                   </div>
@@ -422,7 +422,7 @@ export default function WardsPage() {
                     <div style={{ fontSize: "11px", fontWeight: 700, color: "#8A9BB0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
                       <Cpu size={12} color="#8A9BB0" /> Drone Action Recommendation
                     </div>
-                    <div style={{ fontSize: "13px", color: "#0D1B2A", lineHeight: 1.6 }}>
+                    <div style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.6 }}>
                       {droneRec(selectedStation?.aqi ?? 0, selectedZone.aviation_exposure)}
                     </div>
                   </div>

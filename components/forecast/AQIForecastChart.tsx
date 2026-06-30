@@ -21,7 +21,7 @@ export function AQIForecastChart({ data }: { data: any[] }) {
               <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 11 }} />
               
               <Tooltip 
-                contentStyle={{ borderRadius: '2px', fontFamily: 'var(--font-mono)' }}
+                contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-faint)', color: 'var(--text-primary)', borderRadius: '2px', fontFamily: 'var(--font-mono)' }}
                 formatter={(value: any, name: any) => {
                   if (name === "confidence") return [`${value[0]} - ${value[1]}`, "95% Confidence Band"];
                   return [value, "Predicted AQI"];

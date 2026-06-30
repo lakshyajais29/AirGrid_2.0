@@ -12,7 +12,7 @@ const TIMELINE = [
 export function EnforcementTimeline() {
   return (
     <div style={{ padding: "10px 14px 12px" }}>
-      <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", display: "block", marginBottom: "10px" }}>
+      <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "10px" }}>
         Recent Actions
       </span>
 
@@ -23,7 +23,7 @@ export function EnforcementTimeline() {
             <div style={{
               position: "absolute", left: "13px", top: "26px",
               width: "1px", height: "calc(100% - 8px)",
-              background: "rgba(13,27,42,0.07)",
+              background: "var(--border-faint)",
             }} />
           )}
 
@@ -43,16 +43,16 @@ export function EnforcementTimeline() {
           {/* Content */}
           <div style={{ paddingBottom: "12px", flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#1F2937", lineHeight: 1.3 }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
                 {ev.action}
               </div>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "#9CA3AF", flexShrink: 0, marginLeft: "6px" }}>
+              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--text-muted)", flexShrink: 0, marginLeft: "6px" }}>
                 {ev.time}
               </span>
             </div>
             <div style={{ display: "flex", gap: "5px", marginTop: "3px", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "10px", color: "#6B7280" }}>{ev.ward}</span>
-              <span style={{ fontSize: "10px", color: "#CBD5E0" }}>·</span>
+              <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>{ev.ward}</span>
+              <span style={{ fontSize: "10px", color: "var(--text-disabled)" }}>·</span>
               <span style={{
                 fontSize: "9px", fontWeight: 700,
                 color: ev.color,

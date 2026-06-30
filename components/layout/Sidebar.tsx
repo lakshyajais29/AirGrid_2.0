@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, MapPin, Building2,
   Plane, AlertTriangle, Brain,
-  Wind, TrendingUp, BarChart3, GitBranch,
+  TrendingUp, BarChart3,
   FileText, Factory, Heart, Settings,
 } from "lucide-react";
+import { AppearanceSwitcher } from "@/components/layout/AppearanceSwitcher";
 
 const NAV_GROUPS = [
   {
@@ -29,10 +30,8 @@ const NAV_GROUPS = [
   {
     label: "Analysis",
     items: [
-      { name: "Plume & Dispersion",  href: "/plume",       icon: Wind       },
       { name: "Forecasting",         href: "/forecast",    icon: TrendingUp },
       { name: "Temporal Analytics",  href: "/analytics",   icon: BarChart3  },
-      { name: "AQI Correlation",     href: "/correlation", icon: GitBranch  },
     ],
   },
   {
@@ -47,15 +46,18 @@ const NAV_GROUPS = [
 ];
 
 const SidebarContent = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const pathname  = usePathname();
+  const [isOpen,     setIsOpen]     = useState(false);
+  const [lockedOpen, setLockedOpen] = useState(false);
+  const pathname    = usePathname();
   const searchParams = useSearchParams();
 
   if (searchParams.get("demo") === "true") return null;
 
+  const expanded = isOpen || lockedOpen;
+
   return (
     <>
-      {isOpen && (
+      {isOpen && !lockedOpen && (
         <div
           style={{ position: "fixed", inset: 0, zIndex: 98 }}
           onClick={() => setIsOpen(false)}
@@ -64,20 +66,20 @@ const SidebarContent = () => {
 
       <nav
         onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
+        onMouseLeave={() => { if (!lockedOpen) setIsOpen(false); }}
         style={{
-          position:   "fixed",
-          left:       0,
-          top:        "52px",
-          height:     "calc(100vh - 52px - 36px)",
-          width:      isOpen ? "240px" : "64px",
-          zIndex:     100,
-          transition: "width 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
-          background: "linear-gradient(180deg, #0D1B2A 0%, #0f2035 100%)",
-          borderRight:"1px solid rgba(15,139,141,0.15)",
-          display:    "flex",
+          position:      "fixed",
+          left:          0,
+          top:           "52px",
+          height:        "calc(100vh - 52px - 36px)",
+          width:         expanded ? "240px" : "64px",
+          zIndex:        100,
+          transition:    "width 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+          background:    "var(--shell-bg)",
+          borderRight:   "1px solid var(--shell-border)",
+          display:       "flex",
           flexDirection: "column",
-          overflow:   "hidden",
+          overflow:      "hidden",
         }}
       >
         {/* Nav groups */}
@@ -87,9 +89,9 @@ const SidebarContent = () => {
               {/* Group label — only readable when expanded */}
               <div style={{ height: "26px", display: "flex", alignItems: "center", padding: "0 0 0 22px", marginTop: gi === 0 ? 0 : "6px" }}>
                 <span style={{
-                  fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em",
-                  textTransform: "uppercase", color: "rgba(255,255,255,0.22)",
-                  whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                  fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em",
+                  textTransform: "uppercase", color: "var(--shell-text-faint)",
+                  whiteSpace: "nowrap", opacity: expanded ? 1 : 0,
                   transition: "opacity 0.12s ease",
                 }}>
                   {group.label}
@@ -97,20 +99,21 @@ const SidebarContent = () => {
               </div>
 
               {group.items.map((item) => {
-                const isActive  = pathname === item.href;
-                const Icon      = item.icon;
-                const isSoon    = "soon" in item && item.soon;
+                const isActive = pathname === item.href;
+                const Icon     = item.icon;
+                const isSoon   = "soon" in item && item.soon;
 
                 if (isSoon) {
                   return (
-                    <div key={item.href} title={!isOpen ? item.name : undefined} style={{
+                    <div key={item.href} title={!expanded ? item.name : undefined} style={{
                       display: "flex", alignItems: "center", height: "40px",
-                      padding: "0 22px", gap: "14px", opacity: 0.28, cursor: "not-allowed", overflow: "hidden",
+                      padding: "var(--nav-padding)", margin: "var(--nav-margin)", borderRadius: "var(--nav-radius)",
+                      gap: "14px", opacity: 0.28, cursor: "not-allowed", overflow: "hidden",
                     }}>
-                      <Icon size={16} color="rgba(255,255,255,0.5)" style={{ flexShrink: 0 }} />
+                      <Icon size={18} color="var(--shell-text-muted)" style={{ flexShrink: 0 }} />
                       <span style={{
-                        fontSize: "13px", color: "rgba(255,255,255,0.5)",
-                        whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                        fontSize: "13px", color: "var(--shell-text-muted)",
+                        whiteSpace: "nowrap", opacity: expanded ? 1 : 0,
                         transition: "opacity 0.1s ease",
                       }}>
                         {item.name}
@@ -123,22 +126,24 @@ const SidebarContent = () => {
                   <a
                     key={item.href}
                     href={item.href}
-                    title={!isOpen ? item.name : undefined}
+                    title={!expanded ? item.name : undefined}
                     style={{
                       display: "flex", alignItems: "center", height: "40px",
-                      padding: "0 22px", gap: "14px", textDecoration: "none", overflow: "hidden",
-                      borderLeft: isActive ? "2px solid #0F8B8D" : "2px solid transparent",
-                      background:  isActive ? "rgba(15,139,141,0.10)" : "transparent",
-                      transition: "background 0.15s ease",
+                      padding: "var(--nav-padding)", margin: "var(--nav-margin)", borderRadius: "var(--nav-radius)",
+                      gap: "14px", textDecoration: "none", overflow: "hidden",
+                      borderLeft: isActive ? "calc(var(--nav-border) * 1) solid var(--shell-active-text)" : "calc(var(--nav-border) * 1) solid transparent",
+                      background:  isActive ? "var(--shell-active-bg)" : "transparent",
+                      boxShadow: isActive ? "var(--shell-active-shadow)" : "none",
+                      transition: "background 0.15s ease, box-shadow 0.15s ease",
                     }}
-                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--shell-hover-bg)"; }}
                     onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                   >
-                    <Icon size={16} color={isActive ? "#0F8B8D" : "rgba(255,255,255,0.5)"} style={{ flexShrink: 0 }} />
+                    <Icon size={18} color={isActive ? "var(--shell-active-text)" : "var(--shell-text-muted)"} style={{ flexShrink: 0 }} />
                     <span style={{
                       fontSize: "13px", fontWeight: isActive ? 600 : 400,
-                      color: isActive ? "#fff" : "rgba(255,255,255,0.62)",
-                      whiteSpace: "nowrap", opacity: isOpen ? 1 : 0,
+                      color: isActive ? "var(--shell-text-primary)" : "var(--shell-text-secondary)",
+                      whiteSpace: "nowrap", opacity: expanded ? 1 : 0,
                       transition: "opacity 0.1s ease",
                     }}>
                       {item.name}
@@ -148,16 +153,28 @@ const SidebarContent = () => {
               })}
 
               {gi < NAV_GROUPS.length - 1 && (
-                <div style={{ height: "1px", margin: "8px 14px", background: "rgba(255,255,255,0.05)" }} />
+                <div style={{ height: "1px", margin: "8px 14px", background: "var(--shell-border)" }} />
               )}
             </div>
           ))}
         </div>
 
-        {/* Status footer — drones active */}
+        {/* ── Divider before bottom controls ── */}
+        <div style={{ height: "1px", margin: "0 14px", background: "var(--shell-border)", flexShrink: 0 }} />
+
+        {/* ── Appearance Switcher ── */}
+        <div style={{ flexShrink: 0 }}>
+          <AppearanceSwitcher
+            expanded={expanded}
+            onPopoverChange={(open) => setLockedOpen(open)}
+          />
+        </div>
+
+        {/* ── Status footer — drones active ── */}
         <div style={{
-          padding: "10px 22px", borderTop: "1px solid rgba(255,255,255,0.05)",
+          padding: "10px 22px", borderTop: "1px solid var(--shell-border)",
           display: "flex", alignItems: "center", gap: "10px", overflow: "hidden",
+          flexShrink: 0,
         }}>
           <div style={{
             width: "7px", height: "7px", borderRadius: "50%",
@@ -165,9 +182,9 @@ const SidebarContent = () => {
             animation: "pulse-live 2s infinite",
           }} />
           <span style={{
-            fontSize: "10px", color: "rgba(255,255,255,0.32)",
+            fontSize: "10px", color: "var(--shell-text-tertiary, var(--shell-text-faint))",
             fontFamily: "var(--font-mono)", whiteSpace: "nowrap",
-            opacity: isOpen ? 1 : 0, transition: "opacity 0.1s ease",
+            opacity: expanded ? 1 : 0, transition: "opacity 0.1s ease",
             letterSpacing: "0.08em",
           }}>
             2 DRONES ACTIVE
@@ -181,7 +198,7 @@ const SidebarContent = () => {
 export default function Sidebar() {
   return (
     <Suspense fallback={
-      <div style={{ width: "64px", flexShrink: 0, background: "#0D1B2A", borderRight: "1px solid rgba(15,139,141,0.15)" }} />
+      <div style={{ width: "64px", flexShrink: 0, background: "var(--shell-bg)", borderRight: "1px solid var(--shell-border)" }} />
     }>
       <SidebarContent />
     </Suspense>

@@ -9,6 +9,7 @@ import { WorstWardsTable } from "@/components/dashboard/WorstWardsTable";
 import { IncidentDrawer, type IncidentData } from "@/components/dashboard/IncidentDrawer";
 import { EnforcementTimeline } from "@/components/dashboard/EnforcementTimeline";
 import { Info, MapPin, X } from "lucide-react";
+import LoadingScreen from "@/components/layout/LoadingScreen";
 
 const PollutionMap = dynamic(
   () => import("@/components/modules/pollution/PollutionMap"),
@@ -103,8 +104,8 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function SkeletonKPI() {
   return (
     <div style={{
-      background: "#fff", borderRadius: "10px", padding: "12px 16px",
-      borderLeft: "3px solid #E2E8F0", boxShadow: "var(--shadow-card)", overflow: "hidden",
+      background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: "12px 16px",
+      borderLeft: "3px solid var(--border-faint)", boxShadow: "var(--shadow-card)", overflow: "hidden",
     }}>
       <div style={{ height: "9px", width: "60%",  background: "linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.3s linear infinite", borderRadius: "4px", marginBottom: "8px" }} />
       <div style={{ height: "24px", width: "45%", background: "linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.3s linear infinite", borderRadius: "4px", marginBottom: "6px" }} />
@@ -124,7 +125,7 @@ function MapSkeleton() {
       borderRadius: "inherit",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
-      <span style={{ color: "#9CA3AF", fontSize: "12px", fontFamily: "monospace", letterSpacing: "0.12em" }}>
+      <span style={{ color: "var(--text-muted)", fontSize: "12px", fontFamily: "monospace", letterSpacing: "0.12em" }}>
         LOADING MAP…
       </span>
     </div>
@@ -151,7 +152,7 @@ function Modal({ open, title, onClose, children }: {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#fff", width: "100%", maxWidth: "820px",
+          background: "var(--surface)", width: "100%", maxWidth: "820px",
           borderRadius: "20px 20px 0 0", padding: "28px 28px 32px",
           maxHeight: "80vh", overflowY: "auto",
           boxShadow: "0 -8px 40px rgba(13,27,42,0.18)",
@@ -159,8 +160,8 @@ function Modal({ open, title, onClose, children }: {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF" }}>{title}</span>
-          <button onClick={onClose} style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "#8A9BB0", lineHeight: "32px", textAlign: "center" }}>×</button>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)" }}>{title}</span>
+          <button onClick={onClose} style={{ background: "var(--surface-alt)", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "var(--text-muted)", lineHeight: "32px", textAlign: "center" }}>×</button>
         </div>
         {children}
       </div>
@@ -177,12 +178,12 @@ const SPARK_HISTORY = {
 };
 
 /* ─── Dashboard ─── */
-function CommandCentreContent() {
+function CommandCentreContent({ splashDelay = 0 }: { splashDelay?: number }) {
   useSearchParams();
 
   const [data,    setData]    = useState<AQIData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modal,   setModal]   = useState<"poorWards" | "alerts" | "cityAqi" | null>(null);
+  const [modal,   setModal]   = useState<KpiId | null>(null);
   const [incident, setIncident] = useState<IncidentData | null>(null);
   const [grapDismissed, setGrapDismissed] = useState(false);
 
@@ -257,7 +258,7 @@ function CommandCentreContent() {
     });
   }, []);
 
-  type KpiId = "cityAqi" | "poorWards" | "alerts";
+  type KpiId = "cityAqi" | "poorWards" | "alerts" | "drones";
   const kpis: Array<{
     id:       KpiId | null;
     label:    string;
@@ -270,8 +271,13 @@ function CommandCentreContent() {
     { id: "cityAqi",   label: "City AQI",        value: loading ? "—" : animAqi,       sub: aqiCategory(cityAqi).toUpperCase(), change: "↑ 12 vs 06:00 AM",  color: aqiColor(cityAqi), sparkKey: "cityAqi"   },
     { id: "poorWards", label: "Wards in Poor+",   value: loading ? "—" : animPoorWards, sub: "Above AQI 200",                    change: "↔ 0 change",         color: "#DC2626",         sparkKey: "poorWards" },
     { id: "alerts",    label: "Active Alerts",     value: loading ? "—" : animAlerts,   sub: "Require action",                   change: "↔ 0 change",         color: "#D97706",         sparkKey: "alerts"    },
-    { id: null,        label: "Drones Active",     value: 2,                            sub: "Patrolling hotspots",              change: "↑ 1 vs yesterday",   color: "#0F8B8D",         sparkKey: "drones"    },
+    { id: null,        label: "Active Drones",     value: 0,                            sub: "Deployed",                         change: "↔ 0 change",         color: "#4F46E5",         sparkKey: "drones"    },
   ];
+
+  // Only stagger on first load (behind splash); return visits use template's pageEnter
+  const ca = (stagger = 0): React.CSSProperties => splashDelay > 0
+    ? { animation: `cardEnter 0.5s cubic-bezier(0.22,1,0.36,1) ${splashDelay + stagger}ms both` }
+    : {};
 
   return (
     <>
@@ -287,12 +293,12 @@ function CommandCentreContent() {
       }}>
 
         {/* ── PAGE HEADER: title + GRAP banner ── */}
-        <div style={{ display: "flex", alignItems: "center", flexShrink: 0, gap: "20px", minHeight: "40px" }}>
+        <div style={{ display: "flex", alignItems: "center", flexShrink: 0, gap: "20px", minHeight: "40px", ...ca(0) }}>
           <div style={{ flexShrink: 0 }}>
-            <h1 style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A", margin: 0, letterSpacing: "-0.01em" }}>
+            <h1 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
               Command Centre
             </h1>
-            <p style={{ fontSize: "10px", color: "#9CA3AF", margin: "2px 0 0", fontFamily: "var(--font-mono)" }}>
+            <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: "2px 0 0", fontFamily: "var(--font-mono)" }}>
               NCT Delhi · {new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
             </p>
           </div>
@@ -329,7 +335,7 @@ function CommandCentreContent() {
         </div>
 
         {/* ── KPI STRIP: 4 cards with sparklines ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0, ...ca(80) }}>
           {kpis.map(kpi => (
             loading ? <SkeletonKPI key={kpi.label} /> : (
               <div
@@ -337,12 +343,12 @@ function CommandCentreContent() {
                 className={kpi.id ? "stat-box-clickable" : ""}
                 onClick={() => kpi.id && setModal(kpi.id)}
                 style={{
-                  background: "#fff", borderRadius: "10px", padding: "10px 14px",
+                  background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: "10px 14px",
                   borderLeft: `3px solid ${kpi.color}`,
                   boxShadow: "var(--shadow-card)", cursor: kpi.id ? "pointer" : "default",
                 }}
               >
-                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", display: "block", marginBottom: "2px" }}>
+                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "2px" }}>
                   {kpi.label}
                 </span>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "8px" }}>
@@ -350,13 +356,13 @@ function CommandCentreContent() {
                     <span style={{ fontSize: "26px", fontWeight: 800, fontFamily: "var(--font-mono)", color: kpi.color, lineHeight: 1, display: "block" }}>
                       {kpi.value}
                     </span>
-                    <span style={{ fontSize: "9px", color: "#9CA3AF", display: "block", marginTop: "2px" }}>
+                    <span style={{ fontSize: "9px", color: "var(--text-muted)", display: "block", marginTop: "2px" }}>
                       {kpi.sub}
                     </span>
                   </div>
                   <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", paddingBottom: "1px" }}>
                     <Sparkline data={spark[kpi.sparkKey]} color={kpi.color} />
-                    <span style={{ fontSize: "9px", color: "#9CA3AF", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "9px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                       {kpi.change}
                     </span>
                   </div>
@@ -370,56 +376,56 @@ function CommandCentreContent() {
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr 300px", gap: "12px", flex: 1, minHeight: 0 }}>
 
           {/* COL 1: Gauge + Drones + Critical Zones */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0, ...ca(160) }}>
 
             {/* Current Status — AQI Gauge */}
-            <div style={{ background: "#fff", borderRadius: "12px", padding: "12px 14px", boxShadow: "var(--shadow-card)", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", alignSelf: "flex-start", marginBottom: "6px" }}>
+            <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: "12px 14px", boxShadow: "var(--shadow-card)", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", alignSelf: "flex-start", marginBottom: "6px" }}>
                 Current Status
               </span>
               <AQIGauge value={loading ? 0 : cityAqi} size={148} />
             </div>
 
             {/* Critical Zones — top 5, flex-fills remaining height, internally scrollable */}
-            <div style={{ background: "#fff", borderRadius: "12px", boxShadow: "var(--shadow-card)", display: "flex", flexDirection: "column", overflow: "hidden", flex: 1, minHeight: 0 }}>
+            <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)", display: "flex", flexDirection: "column", overflow: "hidden", flex: 1, minHeight: 0 }}>
               <div style={{ padding: "10px 14px 5px", flexShrink: 0 }}>
-                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF" }}>
+                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)" }}>
                   Critical Zones (Top 5)
                 </span>
               </div>
               <div style={{ overflowY: "auto", flex: 1, minHeight: 0, scrollbarWidth: "thin", scrollbarColor: "#E2E8F0 transparent" }}>
                 <WorstWardsTable onSelect={setIncident} />
               </div>
-              <a href="/wards" style={{ padding: "7px 14px", borderTop: "1px solid rgba(13,27,42,0.05)", fontSize: "11px", color: "var(--accent)", textAlign: "right", flexShrink: 0, textDecoration: "none", display: "block", fontWeight: 500 }}>
+              <a href="/wards" style={{ padding: "7px 14px", borderTop: "1px solid var(--border-faint)", fontSize: "11px", color: "var(--accent)", textAlign: "right", flexShrink: 0, textDecoration: "none", display: "block", fontWeight: 500 }}>
                 View all 272 wards →
               </a>
             </div>
           </div>
 
           {/* COL 2: Map + source bar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
-            <div style={{ background: "#e8ecf4", borderRadius: "12px", boxShadow: "var(--shadow-card)", flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0, ...ca(210) }}>
+            <div style={{ background: "var(--page-bg)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)", flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
               <PollutionMap compact={true} onStationClick={handleStationClick} />
             </div>
-            <div style={{ background: "#fff", borderRadius: "9px", padding: "7px 14px", boxShadow: "var(--shadow-card)", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, height: "34px" }}>
+            <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: "7px 14px", boxShadow: "var(--shadow-card)", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, height: "34px" }}>
               <span className="live-dot" style={{ width: "6px", height: "6px", margin: 0, flexShrink: 0 }} />
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "#0F172A" }}>WAQI Live</span>
-              <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-primary)" }}>WAQI Live</span>
+              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
                 · {stations.length || "—"} stations · CPCB / DPCC
               </span>
               <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
                 <MapPin size={10} color="#9CA3AF" />
-                <span style={{ fontSize: "10px", color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>28.6139°N 77.2090°E</span>
+                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>28.6139°N 77.2090°E</span>
               </span>
             </div>
           </div>
 
           {/* COL 3: Active Alerts + Enforcement Timeline */}
-          <div style={{ background: "#fff", borderRadius: "12px", boxShadow: "var(--shadow-card)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)", display: "flex", flexDirection: "column", overflow: "hidden", ...ca(260) }}>
 
             {/* Alert header */}
-            <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid rgba(13,27,42,0.06)", flexShrink: 0 }}>
-              <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", display: "block", marginBottom: "7px" }}>
+            <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid var(--border-faint)", flexShrink: 0 }}>
+              <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "7px" }}>
                 Active Alerts
               </span>
               <div style={{ display: "flex", gap: "5px" }}>
@@ -440,7 +446,7 @@ function CommandCentreContent() {
             </div>
 
             {/* Enforcement Timeline — compact, internally scrollable */}
-            <div style={{ borderTop: "1px solid rgba(13,27,42,0.06)", flexShrink: 0, maxHeight: "196px", overflowY: "auto", scrollbarWidth: "thin", scrollbarColor: "#E2E8F0 transparent" }}>
+            <div style={{ borderTop: "1px solid var(--border-faint)", flexShrink: 0, maxHeight: "196px", overflowY: "auto", scrollbarWidth: "thin", scrollbarColor: "#E2E8F0 transparent" }}>
               <EnforcementTimeline />
             </div>
           </div>
@@ -455,22 +461,22 @@ function CommandCentreContent() {
       <Modal open={modal === "cityAqi"} title="City AQI · Station Breakdown" onClose={() => setModal(null)}>
         <div style={{ display: "flex", gap: "14px", marginBottom: "20px" }}>
           <div style={{ background: "var(--page-bg)", borderRadius: "12px", padding: "16px 24px", textAlign: "center", flex: 1 }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", display: "block", marginBottom: "6px" }}>City Average AQI</span>
+            <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>City Average AQI</span>
             <div style={{ fontFamily: "monospace", fontSize: "3rem", fontWeight: 900, color: aqiColor(cityAqi), lineHeight: 1 }}>{cityAqi}</div>
             <div style={{ fontSize: "13px", color: aqiColor(cityAqi), fontWeight: 700, marginTop: "6px" }}>{aqiCategory(cityAqi)}</div>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {stations.map(s => (
-            <div key={s.id} style={{ padding: "12px", border: "1px solid #E2E8F0", borderRadius: "10px", borderLeft: `4px solid ${aqiColor(s.aqi)}` }}>
+            <div key={s.id} style={{ padding: "12px", border: "1px solid var(--border-faint)", borderRadius: "10px", borderLeft: `4px solid ${aqiColor(s.aqi)}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                <span style={{ fontWeight: 600, color: "#0D1B2A", fontSize: "13px" }}>{s.name}</span>
+                <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "13px" }}>{s.name}</span>
                 <span style={{ fontFamily: "monospace", fontWeight: 800, color: aqiColor(s.aqi), fontSize: "18px" }}>{s.aqi}</span>
               </div>
-              <div style={{ background: "#F1F5F9", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
+              <div style={{ background: "var(--surface-alt)", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
                 <div style={{ width: `${Math.min(100, (s.aqi / 500) * 100)}%`, height: "100%", background: aqiColor(s.aqi), borderRadius: "4px", transition: "width 0.5s ease" }} />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "10px", color: "#8A9BB0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "10px", color: "var(--text-muted)" }}>
                 <span>{aqiCategory(s.aqi)}</span><span>{s.minutesAgo}m ago</span>
               </div>
             </div>
@@ -488,14 +494,14 @@ function CommandCentreContent() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {[...poorWards].sort((a, b) => b.aqi - a.aqi).map((s, i) => (
-              <div key={s.id} style={{ border: "1px solid #E2E8F0", borderRadius: "12px", overflow: "hidden", borderLeft: `5px solid ${aqiColor(s.aqi)}` }}>
-                <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: i === 0 ? "#FFF5F5" : "#FAFBFC" }}>
+              <div key={s.id} style={{ border: "1px solid var(--border-faint)", borderRadius: "12px", overflow: "hidden", borderLeft: `5px solid ${aqiColor(s.aqi)}` }}>
+                <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: i === 0 ? "rgba(220,38,38,0.06)" : "var(--surface-alt)" }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "14px" }}>
+                    <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "14px" }}>
                       {i === 0 && <span style={{ fontSize: "11px", background: "#C0392B", color: "white", borderRadius: "4px", padding: "1px 6px", marginRight: "8px" }}>WORST</span>}
                       {s.name}
                     </div>
-                    <div style={{ fontSize: "11px", color: "#8A9BB0", marginTop: "2px" }}>{s.minutesAgo}m ago{s.pm25 != null && ` · PM2.5: ${s.pm25} µg/m³`}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{s.minutesAgo}m ago{s.pm25 != null && ` · PM2.5: ${s.pm25} µg/m³`}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontFamily: "monospace", fontSize: "2rem", fontWeight: 900, color: aqiColor(s.aqi), lineHeight: 1 }}>{s.aqi}</div>
@@ -521,8 +527,8 @@ function CommandCentreContent() {
               <div key={s.id} style={{ border: `1px solid ${aqiColor(s.aqi)}40`, borderRadius: "12px", borderLeft: `5px solid ${aqiColor(s.aqi)}`, overflow: "hidden" }}>
                 <div style={{ padding: "14px 16px", background: `${aqiColor(s.aqi)}08`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: "#0D1B2A", fontSize: "14px" }}>{s.name}</div>
-                    <div style={{ fontSize: "11px", color: "#8A9BB0", marginTop: "3px" }}>{s.pm25 != null && `PM2.5: ${s.pm25} µg/m³ · `}{s.minutesAgo}m ago</div>
+                    <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "14px" }}>{s.name}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "3px" }}>{s.pm25 != null && `PM2.5: ${s.pm25} µg/m³ · `}{s.minutesAgo}m ago</div>
                   </div>
                   <div style={{ fontFamily: "monospace", fontSize: "2rem", fontWeight: 900, color: aqiColor(s.aqi) }}>{s.aqi}</div>
                 </div>
@@ -536,9 +542,20 @@ function CommandCentreContent() {
 }
 
 export default function CommandCentre() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const splashDelay = mounted && !sessionStorage.getItem("splashShown") ? 2200 : 0;
+
   return (
-    <Suspense fallback={<MapSkeleton />}>
-      <CommandCentreContent />
-    </Suspense>
+    <>
+      <LoadingScreen />
+      <Suspense fallback={<MapSkeleton />}>
+        <CommandCentreContent splashDelay={splashDelay} />
+      </Suspense>
+    </>
   );
 }

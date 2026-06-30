@@ -3,9 +3,9 @@
 const Footer = () => (
   <footer
     style={{
-      background:  "var(--navy)",
+      background:  "var(--shell-bg)",
       height:      "36px",
-      borderTop:   "1px solid rgba(255,255,255,0.05)",
+      borderTop:   "1px solid var(--shell-border)",
       flexShrink:  0,
       display:     "flex",
       alignItems:  "center",
@@ -13,13 +13,13 @@ const Footer = () => (
       padding:     "0 20px",
     }}
   >
-    <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "rgba(255,255,255,0.25)", letterSpacing: "0.12em" }}>
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--shell-text-faint)", letterSpacing: "0.12em" }}>
       ⬡ AIRGRID OS v2.0
     </span>
-    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "rgba(255,255,255,0.18)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--shell-text-faint)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
       WAQI · CPCB · DPCC · OpenWeatherMap
     </span>
-    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "rgba(255,255,255,0.18)", letterSpacing: "0.08em" }}>
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--shell-text-faint)", letterSpacing: "0.08em" }}>
       © 2026 GOVERNMENT OF NCT OF DELHI
     </span>
   </footer>

@@ -37,7 +37,7 @@ export function TomorrowRiskGrid() {
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {zones.map(z => (
-            <div key={z.name} className={`border-l-4 p-4 rounded-sm shadow-sm bg-white ${getStyle(z.risk)}`}>
+            <div key={z.name} className={`border-l-4 p-4 rounded-sm shadow-sm ${getStyle(z.risk)}`}>
               <p className="font-semibold text-slate-800">{z.name}</p>
               <div className="flex justify-between items-end mt-2">
                 <span className="text-2xl font-mono font-bold leading-none">{z.aqi}</span>

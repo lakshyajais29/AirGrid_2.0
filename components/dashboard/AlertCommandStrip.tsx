@@ -129,7 +129,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
   return (
     <div
       style={{
-        background:  alert.acknowledged ? "#F9FAFB" : "#FFFFFF",
+        background:  alert.acknowledged ? "var(--surface-alt)" : "var(--surface)",
         opacity:     alert.acknowledged ? 0.62 : 1,
         animation:   isNew ? "slideDown 0.3s ease both" : undefined,
         borderRadius:"9px",
@@ -146,7 +146,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
         <span style={{ flexShrink: 0, marginTop: "1px", display: "flex" }}>{cfg.icon}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
               {alert.title}
             </span>
             <span style={{
@@ -164,21 +164,21 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", marginBottom: "8px", paddingLeft: "22px" }}>
         <span style={{
           fontSize: "10px", fontWeight: 600, fontFamily: "var(--font-mono)",
-          background: "#F1F5F9", color: "#374151",
+          background: "var(--surface-alt)", color: "var(--text-secondary)",
           padding: "1px 7px", borderRadius: "20px",
         }}>
           {alert.ward}
         </span>
-        <span style={{ fontSize: "10px", color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>
-          {alert.pollutant}: <strong style={{ color: "#374151" }}>{alert.value}</strong>
+        <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+          {alert.pollutant}: <strong style={{ color: "var(--text-secondary)" }}>{alert.value}</strong>
           {alert.pollutant === "CO" ? " mg/m³" : alert.pollutant === "AQI" ? "" : alert.pollutant === "SO₂" || alert.pollutant === "NO₂" ? " ppb" : " µg/m³"}
         </span>
-        <span style={{ fontSize: "10px", color: "#CBD5E0" }}>·</span>
-        <span style={{ fontSize: "10px", color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>
+        <span style={{ fontSize: "10px", color: "var(--text-disabled)" }}>·</span>
+        <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
           {relativeTime(alert.time)}
         </span>
-        <span style={{ fontSize: "10px", color: "#CBD5E0" }}>·</span>
-        <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+        <span style={{ fontSize: "10px", color: "var(--text-disabled)" }}>·</span>
+        <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
           AI: <strong style={{ color: alert.confidence >= 85 ? "#16A34A" : "#D97706" }}>{alert.confidence}%</strong>
         </span>
       </div>
@@ -210,11 +210,11 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
             {deptOpen && (
               <div style={{
                 position: "absolute", left: 0, top: "calc(100% + 5px)",
-                background: "#fff", border: "1px solid #E2E8F0",
+                background: "var(--surface)", border: "1px solid var(--border-faint)",
                 borderRadius: "10px", boxShadow: "0 8px 28px rgba(13,27,42,0.14)",
                 minWidth: "220px", zIndex: 200, overflow: "hidden",
               }}>
-                <div style={{ padding: "7px 12px 5px", fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", color: "#9CA3AF", textTransform: "uppercase" }}>
+                <div style={{ padding: "7px 12px 5px", fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase" }}>
                   Recommended Departments
                 </div>
                 {depts.map((dept) => (
@@ -224,10 +224,10 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
                     style={{
                       display: "block", width: "100%", textAlign: "left",
                       padding: "8px 12px", fontSize: "12px", fontWeight: 500,
-                      color: "#0D1B2A", background: "transparent", border: "none",
+                      color: "var(--text-primary)", background: "transparent", border: "none",
                       cursor: "pointer", transition: "background 0.1s",
                     }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#EFF6FF"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(15,139,141,0.08)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                   >
                     {dept}
@@ -246,7 +246,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
                 rel="noopener noreferrer"
                 title="Open location in Google Maps"
                 style={{
-                  ...btnStyle("#F8FAFC", "#374151", "#E2E8F0"),
+                  ...btnStyle("var(--surface-alt)", "var(--text-secondary)", "var(--border-faint)"),
                   display: "inline-flex", alignItems: "center", gap: "3px",
                   textDecoration: "none",
                 }}
@@ -257,7 +257,7 @@ function AlertCard({ alert, onAcknowledge, onAssign, isNew, compact }: AlertCard
               <button
                 title="Download Evidence Package (PDF)"
                 onClick={() => alert.ward && console.log("evidence:", alert.id)}
-                style={{ ...btnStyle("#F8FAFC", "#374151", "#E2E8F0"), display: "inline-flex", alignItems: "center", gap: "3px" }}
+                style={{ ...btnStyle("var(--surface-alt)", "var(--text-secondary)", "var(--border-faint)"), display: "inline-flex", alignItems: "center", gap: "3px" }}
               >
                 <Download size={10} />
                 Evidence
@@ -336,11 +336,11 @@ export const AlertCommandStrip: React.FC<AlertCommandStripProps> = ({ compact })
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {visible.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 16px", color: "#8A9BB0" }}>
+        <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
             <CheckCircle size={36} color="#16A34A" />
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#4A6080", marginBottom: "4px" }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "4px" }}>
             All parameters within limits
           </div>
           <div style={{ fontSize: "11px" }}>No active enforcement actions required.</div>
@@ -361,7 +361,7 @@ export const AlertCommandStrip: React.FC<AlertCommandStripProps> = ({ compact })
       {/* Acknowledged section — only shown in full (non-compact) mode */}
       {!compact && acknowledged.length > 0 && (
         <div style={{ marginTop: "8px" }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: "6px", padding: "0 2px" }}>
+          <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "6px", padding: "0 2px" }}>
             Acknowledged ({acknowledged.length})
           </div>
           {acknowledged.map((alert) => (

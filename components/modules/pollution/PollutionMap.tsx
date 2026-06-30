@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useTheme } from "@/lib/ThemeContext";
+
+const TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const TILE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 import {
   MapContainer,
   TileLayer,
@@ -262,8 +266,8 @@ export default function PollutionMap({
   compact?: boolean;
   onStationClick?: (station: Station) => void;
 }) {
-  const searchParams = useSearchParams();
-  const isDemo = searchParams.get("demo") === "true";
+  const { resolved: themeResolved } = useTheme();
+  const tileUrl = themeResolved === "dark" ? TILE_DARK : TILE_LIGHT;
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<string>("");
@@ -410,7 +414,7 @@ export default function PollutionMap({
       {!compact && (
         <div
           className="rounded-lg p-4 flex flex-wrap items-center gap-4"
-          style={{ background: "white", border: "1px solid #E2E8F0" }}
+          style={{ background: "var(--surface)", border: "1px solid var(--border-faint)" }}
         >
           {/* Pollutant Selector */}
           <div className="flex items-center gap-1">
@@ -426,9 +430,9 @@ export default function PollutionMap({
                 onClick={() => setPollutant(p)}
                 className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
                 style={{
-                  background: pollutant === p ? "var(--mid-blue)" : "#F1F5F9",
+                  background: pollutant === p ? "var(--mid-blue)" : "var(--surface-alt)",
                   color: pollutant === p ? "#fff" : "var(--text-primary)",
-                  border: pollutant === p ? "1px solid var(--mid-blue)" : "1px solid #E2E8F0",
+                  border: pollutant === p ? "1px solid var(--mid-blue)" : "1px solid var(--border-faint)",
                 }}
               >
                 {POLLUTANT_LABELS[p].label}
@@ -437,7 +441,7 @@ export default function PollutionMap({
           </div>
 
           {/* Divider */}
-          <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
+          <div className="hidden sm:block w-px h-6" style={{ background: "var(--border-faint)" }} />
 
           {/* Time Range */}
           <div className="flex items-center gap-1">
@@ -453,9 +457,9 @@ export default function PollutionMap({
                 onClick={() => setTimeRange(t)}
                 className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
                 style={{
-                  background: timeRange === t ? "var(--navy)" : "#F1F5F9",
+                  background: timeRange === t ? "var(--mid-blue)" : "var(--surface-alt)",
                   color: timeRange === t ? "#fff" : "var(--text-primary)",
-                  border: timeRange === t ? "1px solid var(--navy)" : "1px solid #E2E8F0",
+                  border: timeRange === t ? "1px solid var(--mid-blue)" : "1px solid var(--border-faint)",
                 }}
               >
                 {t === "now" ? "Now" : t}
@@ -464,16 +468,16 @@ export default function PollutionMap({
           </div>
 
           {/* Divider */}
-          <div className="hidden sm:block w-px h-6" style={{ background: "#E2E8F0" }} />
+          <div className="hidden sm:block w-px h-6" style={{ background: "var(--border-faint)" }} />
 
           {/* Heatmap Toggle */}
           <button
             onClick={() => setShowHeatmap(!showHeatmap)}
             className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
             style={{
-              background: showHeatmap ? "var(--accent-teal)" : "#F1F5F9",
+              background: showHeatmap ? "var(--accent-teal)" : "var(--surface-alt)",
               color: showHeatmap ? "#fff" : "var(--text-primary)",
-              border: showHeatmap ? "1px solid var(--accent-teal)" : "1px solid #E2E8F0",
+              border: showHeatmap ? "1px solid var(--accent-teal)" : "1px solid var(--border-faint)",
             }}
           >
             Heatmap
@@ -505,8 +509,9 @@ export default function PollutionMap({
           className="z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            key={themeResolved}
+            attribution={TILE_ATTRIBUTION}
+            url={tileUrl}
           />
 
           {showHeatmap && (
@@ -560,7 +565,7 @@ export default function PollutionMap({
                       className="flex items-center justify-between mb-2 pb-2"
                       style={{ borderBottom: "1px solid #E2E8F0" }}
                     >
-                      <span className="font-semibold text-sm" style={{ color: "var(--navy)" }}>
+                      <span className="font-semibold text-sm text-slate-900">
                         {s.name}
                       </span>
                       <span
@@ -616,8 +621,7 @@ export default function PollutionMap({
                                 {POLLUTANT_LABELS[p].label}
                               </td>
                               <td
-                                className="text-right py-1 font-mono font-semibold"
-                                style={{ color: "var(--navy)" }}
+                                className="text-right py-1 font-mono font-semibold text-slate-900"
                               >
                                 {displayVal != null && p === pollutant
                                   ? displayVal
@@ -644,7 +648,7 @@ export default function PollutionMap({
           {/* ── Legend ── */}
           <div
             className="flex flex-wrap items-center gap-4 px-4 py-2 rounded-lg text-xs"
-            style={{ background: "white", border: "1px solid #E2E8F0", flexShrink: 0 }}
+            style={{ background: "var(--surface)", border: "1px solid var(--border-faint)", flexShrink: 0 }}
           >
             <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               AQI Scale
@@ -666,7 +670,7 @@ export default function PollutionMap({
               </span>
             ))}
 
-            <div className="w-px h-4 mx-2" style={{ background: "#E2E8F0" }} />
+            <div className="w-px h-4 mx-2" style={{ background: "var(--border-faint)" }} />
 
             <span className="font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               Data Quality
@@ -689,30 +693,30 @@ export default function PollutionMap({
           {/* ── Station Comparison Table ── */}
           <div
             className="rounded-lg overflow-hidden flex-shrink-0"
-            style={{ background: "white", border: "1px solid #E2E8F0" }}
+            style={{ background: "var(--surface)", border: "1px solid var(--border-faint)" }}
           >
             {/* Table Header */}
             <div
               className="flex items-center justify-between px-5 py-3"
               style={{ borderBottom: "1px solid #E2E8F0" }}
             >
-              <h3 className="text-base font-semibold" style={{ color: "var(--navy)" }}>
+              <h3 className="text-base font-semibold text-slate-900">
                 Station Comparison
               </h3>
               <button
                 onClick={exportCSV}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors"
                 style={{
-                  background: "#F1F5F9",
+                  background: "var(--surface-alt)",
                   color: "var(--text-primary)",
-                  border: "1px solid #E2E8F0",
+                  border: "1px solid var(--border-faint)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "var(--mid-blue)";
                   e.currentTarget.style.color = "#fff";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#F1F5F9";
+                  e.currentTarget.style.background = "var(--surface-alt)";
                   e.currentTarget.style.color = "var(--text-primary)";
                 }}
               >
@@ -729,7 +733,7 @@ export default function PollutionMap({
             <div className="overflow-x-auto">
               <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ background: "#F8FAFC" }}>
+                  <tr style={{ background: "var(--surface-alt)" }}>
                     {[
                       { field: "name" as SortField, label: "Station" },
                       { field: "aqi" as SortField, label: "AQI" },
@@ -744,7 +748,7 @@ export default function PollutionMap({
                         className="text-left px-4 py-2.5 font-semibold cursor-pointer select-none whitespace-nowrap"
                         style={{
                           color: "var(--text-muted)",
-                          borderBottom: "1px solid #E2E8F0",
+                          borderBottom: "1px solid var(--border-faint)",
                           fontSize: "11px",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
@@ -759,7 +763,7 @@ export default function PollutionMap({
                       className="text-center px-4 py-2.5 font-semibold whitespace-nowrap"
                       style={{
                         color: "var(--text-muted)",
-                        borderBottom: "1px solid #E2E8F0",
+                        borderBottom: "1px solid var(--border-faint)",
                         fontSize: "11px",
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
@@ -774,12 +778,12 @@ export default function PollutionMap({
                     <tr
                       key={s.id}
                       style={{
-                        background: i % 2 === 0 ? "white" : "#FAFBFC",
-                        borderBottom: "1px solid #F1F5F9",
+                        background: i % 2 === 0 ? "var(--surface)" : "var(--surface-alt)",
+                        borderBottom: "1px solid var(--border-faint)",
                       }}
                       className="hover:bg-blue-50/40 transition-colors"
                     >
-                      <td className="px-4 py-2.5 font-medium" style={{ color: "var(--navy)" }}>
+                      <td className="px-4 py-2.5 font-medium text-slate-900">
                         {s.name}
                       </td>
                       <td className="px-4 py-2.5">

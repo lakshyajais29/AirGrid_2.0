@@ -73,7 +73,7 @@ export function HourlyHeatmap() {
                         opacity: getOpacity(aqi)
                       }}
                     >
-                      <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                      <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border-faint)] text-xs px-2 py-1 rounded whitespace-nowrap z-10">
                         {row.day} {idx}:00 - AQI {Math.round(aqi)}
                       </div>
                     </div>

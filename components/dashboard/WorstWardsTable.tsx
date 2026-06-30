@@ -71,15 +71,16 @@ export const WorstWardsTable: React.FC<Props> = ({ onSelect, limit }) => {
     <div style={{ width: "100%", overflowX: "hidden" }}>
       <table style={{ borderCollapse: "collapse", tableLayout: "fixed", width: "100%" }}>
         {/* Fixed column widths that sum to fit inside 280px card (252px usable after padding) */}
+        {/* Ward — takes remaining */}
         <colgroup>
           <col style={{ width: "28px" }} />
-          <col />                          {/* Ward — takes remaining */}
+          <col />
           <col style={{ width: "42px" }} />
           <col style={{ width: "46px" }} />
           <col style={{ width: "82px" }} />
         </colgroup>
         <thead>
-          <tr style={{ background: "#F8FAFC", borderBottom: "1px solid rgba(13,27,42,0.06)" }}>
+          <tr style={{ background: "var(--surface-alt)", borderBottom: "1px solid var(--border-faint)" }}>
             {["#", "Ward", "AQI", "Trend", "Source"].map(h => (
               <th key={h} style={{
                 padding: h === "#" ? "7px 4px 7px 12px" : "7px 6px",
@@ -111,11 +112,11 @@ export const WorstWardsTable: React.FC<Props> = ({ onSelect, limit }) => {
                   borderBottom: "1px solid rgba(13,27,42,0.04)",
                   borderLeft:   isWorst ? "3px solid #DC2626" : "3px solid transparent",
                   cursor:       onSelect ? "pointer" : "default",
-                  background:   isWorst ? "rgba(220,38,38,0.025)" : "#fff",
+                  background:   isWorst ? "rgba(220,38,38,0.025)" : "var(--surface)",
                   transition:   "background 0.13s ease",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#F8FAFC"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = isWorst ? "rgba(220,38,38,0.025)" : "#fff"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-alt)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = isWorst ? "rgba(220,38,38,0.025)" : "var(--surface)"; }}
               >
                 {/* # */}
                 <td style={{ padding: "8px 4px 8px 12px" }}>

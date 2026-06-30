@@ -39,8 +39,7 @@ export default function PollutionPage() {
               style={{ background: "var(--mid-blue)" }}
             />
             <h1
-              className="text-2xl font-bold tracking-tight"
-              style={{ color: "var(--navy)" }}
+              className="text-2xl font-bold tracking-tight text-slate-900"
             >
               Pollution Grid — Delhi NCR
             </h1>

@@ -7,6 +7,14 @@ const LoadingScreen = () => {
   const [mounted, setMounted] = useState(true);
 
   useEffect(() => {
+    if (sessionStorage.getItem("splashShown")) {
+      setMounted(false);
+      setVisible(false);
+      return;
+    }
+
+    sessionStorage.setItem("splashShown", "true");
+
     const timer1 = setTimeout(() => {
       setVisible(false);
     }, 1800);

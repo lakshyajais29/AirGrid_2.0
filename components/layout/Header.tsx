@@ -55,19 +55,19 @@ export const Header: React.FC = () => {
       style={{
         height: "52px",
         padding: "0 20px",
-        background: "var(--navy)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "var(--shell-bg)",
+        borderBottom: "1px solid var(--shell-border)",
         flexShrink: 0,
       }}
     >
       {/* ── Brand ── */}
       <div className="flex items-center gap-3">
-        <Hexagon size={20} color="var(--accent)" strokeWidth={1.5} fill="rgba(15,139,141,0.12)" />
+        <Hexagon size={20} color="var(--shell-active-text)" strokeWidth={1.5} fill="var(--shell-active-bg)" />
         <div className="flex flex-col leading-tight">
-          <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff", letterSpacing: "0.08em" }}>
+          <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--shell-text-primary)", letterSpacing: "0.08em" }}>
             AIRGRID OS
           </span>
-          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.30)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          <span style={{ fontSize: "9px", color: "var(--shell-text-faint)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
             Environmental Intelligence · NCT Delhi
           </span>
         </div>
@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
         {/* Live indicator */}
         <div className="flex items-center gap-1.5">
           <span className="live-dot" style={{ width: "6px", height: "6px", margin: 0 }} />
-          <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.38)", fontFamily: "var(--font-mono)", letterSpacing: "0.12em" }}>
+          <span style={{ fontSize: "10px", color: "var(--shell-text-muted)", fontFamily: "var(--font-mono)", letterSpacing: "0.12em" }}>
             LIVE
           </span>
         </div>
@@ -88,10 +88,10 @@ export const Header: React.FC = () => {
         {grap && (
           <div style={{
             display: "flex", alignItems: "center", gap: "6px",
-            padding: "0 10px", height: "28px",
+            padding: "0 12px", height: "28px",
             background: grap.bg,
             border: `1px solid ${grap.color}40`,
-            borderRadius: "6px",
+            borderRadius: "20px",
           }}>
             <Radio size={11} color={grap.color} />
             <span style={{ fontSize: "11px", fontWeight: 700, color: grap.color, fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>
@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
         {/* City AQI value */}
         {cityAqi != null && (
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-mono)" }}>AQI</span>
+            <span style={{ fontSize: "10px", color: "var(--shell-text-secondary)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>AQI</span>
             <span style={{
               fontSize: "16px", fontWeight: 800,
               fontFamily: "var(--font-mono)",
@@ -120,10 +120,10 @@ export const Header: React.FC = () => {
 
         {/* Alert bell */}
         <div style={{ position: "relative", cursor: "pointer" }}>
-          <Bell size={17} color="rgba(255,255,255,0.55)" />
+          <Bell size={17} color="var(--shell-text-secondary)" />
           {alertCount > 0 && (
             <span style={{
-              position: "absolute", top: "-5px", right: "-6px",
+              position: "absolute", top: "-4px", right: "-4px",
               background: "var(--alert-critical)", color: "#fff",
               fontSize: "9px", fontWeight: 700,
               width: "15px", height: "15px",
@@ -137,10 +137,10 @@ export const Header: React.FC = () => {
 
         {/* Date · Clock */}
         <div className="flex flex-col items-end leading-tight" style={{ gap: "1px" }}>
-          <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.65)", letterSpacing: "0.04em" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--shell-text-primary)", letterSpacing: "0.04em" }}>
             {time}
           </span>
-          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.25)", fontFamily: "var(--font-mono)", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: "9px", color: "var(--shell-text-faint)", fontFamily: "var(--font-mono)", letterSpacing: "0.05em" }}>
             {today}
           </span>
         </div>

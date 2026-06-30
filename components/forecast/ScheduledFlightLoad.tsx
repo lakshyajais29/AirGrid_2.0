@@ -19,7 +19,7 @@ export function ScheduledFlightLoad({ data }: { data: any[] }) {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="time" tick={{ fontFamily: 'var(--font-mono)', fontSize: 11 }} />
               <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 11 }} />
-              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-faint)', color: 'var(--text-primary)', borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
               <Bar dataKey="flights" fill="var(--mid-blue)" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

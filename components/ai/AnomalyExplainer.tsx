@@ -1,26 +1,67 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 export function AnomalyExplainer() {
+  const [data, setData] = useState<{ title: string, analysis: string, evidence: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    async function fetchAnomaly() {
+      try {
+        const res = await fetch("/api/ai/anomaly");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        setData({
+          title: "System Unavailable",
+          analysis: "Unable to run anomaly detection at this time.",
+          evidence: "API connection failed.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAnomaly();
+  }, []);
+
   return (
-    <Card className="border-l-4 border-l-[var(--critical-red)] bg-red-50/30">
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <AlertTriangle className="w-5 h-5 text-[var(--critical-red)]" />
-        <CardTitle className="text-[var(--critical-red)] text-lg">Anomaly Detected: NO2 Spike at 08:00 IST</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-sm text-slate-700 space-y-3">
-          <p>
-            <strong className="text-slate-900">AI Analysis:</strong> The sensor network at Sector 8 Dwarka recorded a 40 µg/m³ spike in Nitrogen Dioxide. 
-          </p>
-          <p>
-            <strong className="text-slate-900">Evidence:</strong> Flight telemetry confirms a cluster of 14 wide-body international departures from Runway 29 between 07:45 and 08:15. Meteorological data indicates an inversion layer trapped emissions at ground level (Wind: 1.2m/s, Stability Class F).
-          </p>
+    <Card className="shadow-sm border-slate-200 overflow-hidden rounded-xl">
+      <CardHeader className="flex flex-row items-center gap-3 bg-red-50/50 border-b border-red-100 py-4">
+        <div className="p-2 bg-red-100 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
         </div>
+        <CardTitle className="text-lg font-semibold text-red-900">
+          {loading ? "Analyzing anomalies..." : (data?.title || "No Title")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 bg-white">
+        {loading ? (
+          <div className="flex items-center justify-center py-6 text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            <span className="text-sm">Scanning telemetry...</span>
+          </div>
+        ) : (
+          <div className="text-sm text-slate-700 space-y-4">
+            <div>
+              <strong className="text-slate-900 font-semibold block mb-1">AI Analysis:</strong>
+              <p className="leading-relaxed">{data?.analysis}</p>
+            </div>
+            <div>
+              <strong className="text-slate-900 font-semibold block mb-1">Evidence:</strong>
+              <p className="leading-relaxed">{data?.evidence}</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
+

@@ -43,8 +43,8 @@ export function MultiPollutantTimeSeries() {
               <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 11 }} />
               <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 11 }} />
               <Tooltip 
-                contentStyle={{ borderRadius: '2px', fontFamily: 'var(--font-mono)' }}
-                labelStyle={{ fontWeight: 'bold', color: 'var(--navy)', marginBottom: '5px' }}
+                contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-faint)', color: 'var(--text-primary)', borderRadius: '2px', fontFamily: 'var(--font-mono)' }}
+                labelStyle={{ fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}
               />
               <Legend />
 

@@ -16,7 +16,7 @@ export type Alert = {
 };
 
 // Mock active alerts for Delhi zones
-const mockAlerts: Alert[] = [
+export const mockAlerts: Alert[] = [
   {
     id: 'alert-1',
     ward: 'Anand Vihar',

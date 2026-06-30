@@ -35,7 +35,7 @@ export function YearOnYearComparison() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fontFamily: 'var(--font-sans)', fontSize: 12 }} />
               <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
-              <Tooltip contentStyle={{ borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-faint)', color: 'var(--text-primary)', borderRadius: '2px', fontFamily: 'var(--font-mono)' }} />
               <Legend />
               <Line type="monotone" dataKey="2022" stroke="#94a3b8" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="2023" stroke="var(--gov-gold)" strokeWidth={2} dot={false} />

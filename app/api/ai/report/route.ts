@@ -1,33 +1,66 @@
 import { NextResponse } from "next/server";
+import { getClient, getCityContext, MODEL } from "@/lib/gemini";
 
 export async function GET() {
-  const encoder = new TextEncoder();
-  
-  // Simulated streaming delay helper
-  const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+  try {
+    const client = getClient();
+    const cityContext = getCityContext();
 
-  // The 3-paragraph summary to stream
-  const reportText = `SITUATION REPORT - ${new Date().toISOString().split('T')[0]}\n\n` +
-    `Current Air Quality Index (AQI) stands at 245 (POOR) across the National Capital Region. The dominant pollutant remains PM2.5, primarily driven by localized meteorological stagnation and a 15% increase in aviation traffic at IGI Airport over the last 24 hours. The Graded Response Action Plan (GRAP) is currently active at Stage II.\n\n` +
-    `Aviation emissions from LTO cycles contributed approximately 12.4% to the localized NOx inventory today. A minor anomaly was detected at 08:00 IST where NO2 levels spiked by 40 µg/m³; our models correlate this with a concentrated block of wide-body aircraft departures during low-dispersion wind conditions.\n\n` +
-    `RECOMMENDATION: Advise immediate deployment of mechanical sweepers around Sector 8 Dwarka and request ATC to optimize taxi times. If AQI exceeds 300 within the next 48 hours, GRAP Stage III restrictions should be considered for non-essential diesel generators.`;
+    const prompt = `You are AIRGRID AI, the environmental intelligence assistant for the Delhi Municipal Corporation.
+Generate an authoritative, data-driven daily situation report for senior government officials.
+Structure it strictly in the official Delhi GRAP (Graded Response Action Plan) format.
+Make it highly legible using distinct sections and bullet points.
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const words = reportText.split(' ');
-      for (const word of words) {
-        controller.enqueue(encoder.encode(word + ' '));
-        // Randomize delay to make it feel like an AI typing
-        await delay(20 + Math.random() * 50);
-      }
-      controller.close();
-    }
-  });
+Structure your response exactly as follows (keep it crisp, no rambling):
 
-  return new NextResponse(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Transfer-Encoding": "chunked",
-    },
-  });
+GRAP STAGE [I/II/III/IV]: [Category]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AQI SUMMARY
+• [Crisp bullet point about overall AQI]
+• [Crisp bullet point about dominant pollutants]
+
+HOTSPOT IDENTIFICATION
+• [Ward Name] - [Pollutant & Value] - [Brief reason]
+• [Ward Name] - [Pollutant & Value] - [Brief reason]
+
+METEOROLOGICAL OUTLOOK
+• [Brief weather impact on dispersion]
+
+Do not output markdown headers (like ##), just use the exact text format above. Use ALL CAPS for key metrics.
+
+Current city context (active alerts and sensor readings):
+${cityContext}`;
+
+    const stream = await client.chat.stream({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const readable = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.data.choices[0]?.delta?.content;
+            if (content) controller.enqueue(encoder.encode(content));
+          }
+          controller.close();
+        } catch (e) {
+          controller.error(e);
+        }
+      },
+    });
+
+    return new NextResponse(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (error) {
+    console.error("Mistral Report Error:", error);
+    return new NextResponse("Error generating report.", { status: 500 });
+  }
 }

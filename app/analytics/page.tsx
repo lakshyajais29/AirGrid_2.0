@@ -12,7 +12,7 @@ export default function AnalyticsPage() {
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--navy)] tracking-tight">Advanced Analytics</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Advanced Analytics</h1>
           <p className="text-slate-600 mt-2 text-sm max-w-3xl">
             Deep dive into historical air quality trends, temporal patterns, and festival impacts.
             Use the date picker to filter the multi-pollutant views.
