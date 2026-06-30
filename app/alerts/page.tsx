@@ -397,7 +397,7 @@ function AlertHistoryTable() {
             placeholder="Search by ward..." 
             className="pl-9 bg-white w-full border-slate-200" 
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e: any) => setSearch(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
